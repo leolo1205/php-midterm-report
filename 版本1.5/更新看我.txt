@@ -1,0 +1,30 @@
+新增檔案（1.4 完全沒有）
+
+檔案	功能
+login.php	統一登入頁面，左側玩家登入、右側管理員登入
+logout.php	玩家登出
+lib/session.php	Session 驗證工具（verify_player / verify_admin / get_player_id）
+lib/functions.php	共用函式庫：怪物生成、傷害計算、訓練邏輯、升級處理、API 記錄
+api/train.php	訓練 JSON API（cooldown_check / start_train / claim_reward / add_stat）
+api/combat.php	戰鬥 JSON API（normal_attack / defense_stance / try_escape / victory_settle / defeat_settle）
+admin/（整個目錄）	完整後台管理系統，包含以下頁面：
+admin/index.php	        後台總覽儀表板（統計卡片、排行榜）
+admin/players.php	玩家管理（搜尋、停權、重置、詳細資料）
+admin/records.php	戰鬥/訓練紀錄查詢（含分頁）
+admin/db_layer.php	資料庫層：連線狀態、資料表總覽、怪物生成預覽、傷害模擬器、升級閾值表
+admin/api_module.php	API 模組：訓練/戰鬥 API 監控統計、即時記錄、API 測試工具
+admin/login.php	        管理員登入頁（獨立）
+admin/auth.php	        後台 Session 驗證守衛
+更新的檔案（1.4 已有，1.5 修改）
+
+檔案	        主要變更
+index.php	訓練/升級邏輯改用 lib/functions.php 共用函式取代內嵌程式碼
+tower.php	引入 lib/functions.php
+tower_combat.php	execute_attack() 改用 calculate_damage() 做核心傷害計算
+資料庫新增
+
+資料表	        用途
+admin_users	管理員帳號（password_hash 加密）
+api_logs	所有 API 呼叫記錄（名稱、action、狀態、回應時間）
+users.is_banned	新增停權欄位
+users.password	新增密碼欄位（供未來玩家帳號系統使用）

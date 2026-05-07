@@ -1,0 +1,13 @@
+===主要頁面===
+index.php 主頁面
+tower.php 塔戰鬥的頁面
+skills.php 用來顯示技能的頁面
+
+===tower.php的分支程式===
+tower_story.php 塔的劇情文本
+tower_monsters.php 塔的怪物數據
+tower_events.php 塔的事件處理(非戰鬥)
+tower_combat.php 塔的戰鬥處理
+
+===後台程式===
+db.php 資料庫的連結
