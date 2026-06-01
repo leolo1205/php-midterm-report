@@ -119,7 +119,20 @@ $exp_percent = min(100, ($user['exp'] / $exp_needed) * 100);
         .floor-item:active { transform: scale(0.98); }
         .floor-cleared { background-color: #2e7d32; border: 1px solid #1b5e20; }
         .floor-current { background-color: #f57f17; border: 1px solid #bc5100; color: #fff; } 
-        .floor-locked { background-color: #424242; border: 1px solid #212121; color: #757575; cursor: not-allowed; } 
+        .floor-locked { background-color: #424242; border: 1px solid #212121; color: #757575; cursor: not-allowed; }
+        .opt-btn {
+            padding:9px 6px;border-radius:7px;border:1px solid #2a2a4a;
+            background:#0d0d1a;color:#94a3b8;font-size:12px;font-weight:600;
+            text-align:center;transition:all .15s;
+        }
+        .opt-btn.selected { border-color:#4fc3f7;color:#4fc3f7;background:rgba(79,195,247,.1); }
+        .opt-btn:hover { border-color:#4fc3f7;color:#e0e0e0; }
+        .mode-card {
+            background:#0d0d1a;border:2px solid #2a2a4a;border-radius:10px;
+            padding:18px 12px;text-align:center;cursor:pointer;transition:all .2s;
+        }
+        .mode-card:hover { border-color:#4fc3f7; }
+        .mode-card.selected { border-color:#4fc3f7;background:rgba(79,195,247,.08); }
     </style>
 </head>
 <body>
@@ -164,6 +177,12 @@ $exp_percent = min(100, ($user['exp'] / $exp_needed) * 100);
         <a href="skills.php" style="text-decoration: none;">
             <button type="button" style="background-color: #9c27b0; color: white; margin-bottom: 8px;">📖 查看被動技能</button>
         </a>
+        <a href="forge.php" style="text-decoration: none;">
+            <button type="button" style="background-color: #b8860b; color: white; margin-bottom: 8px;">⚒️ 裝備鍛造</button>
+        </a>
+        <a href="arena.php" style="text-decoration: none;">
+            <button type="button" style="background-color: #b71c1c; color: white; margin-bottom: 8px;">🏟️ 競技場</button>
+        </a>
 
         <!-- 訓練方案 -->
         <?php if ($train_state === 'idle'): ?>
@@ -205,21 +224,103 @@ $exp_percent = min(100, ($user['exp'] / $exp_needed) * 100);
     </div>
 
     <div class="panel">
-        <!-- 塔上限變更為 20 層 -->
         <h3>🏰 爬塔挑戰 (上限 20 層)</h3>
         <p style="font-size: 14px;">目前最高通關層數：第 <b style="color: #4caf50; font-size: 18px;"><?php echo $user['max_floor']; ?></b> 層</p>
-        
+
         <div class="tower-list">
             <?php
-            $max_display_floors = 20; 
-            for ($i = 1; $i <= $max_display_floors; $i++) {
-                if ($i <= $user['max_floor']) echo "<a href='tower.php?floor=$i' class='floor-item floor-cleared'>✅ 第 $i 層 (反覆探索)</a>";
-                elseif ($i == $user['max_floor'] + 1) echo "<a href='tower.php?floor=$i' id='current-floor' class='floor-item floor-current'>⚔️ 挑戰第 $i 層</a>";
-                else echo "<div class='floor-item floor-locked'>🔒 第 $i 層 (未解鎖)</div>";
+            for ($i = 1; $i <= 20; $i++) {
+                if ($i <= $user['max_floor'])
+                    echo "<div class='floor-item floor-cleared' onclick='openAutoModal($i)' style='cursor:pointer;'>✅ 第 $i 層 (反覆探索)</div>";
+                elseif ($i == $user['max_floor'] + 1)
+                    echo "<div class='floor-item floor-current' id='current-floor' onclick='openAutoModal($i)' style='cursor:pointer;'>⚔️ 挑戰第 $i 層</div>";
+                else
+                    echo "<div class='floor-item floor-locked'>🔒 第 $i 層 (未解鎖)</div>";
             }
             ?>
         </div>
     </div>
+</div>
+
+<!-- ── 出發設定 Modal ── -->
+<div id="auto-modal" style="
+  display:none;position:fixed;inset:0;background:rgba(0,0,0,.8);
+  z-index:999;align-items:center;justify-content:center;">
+  <div style="
+    background:#16213e;border:1px solid #2a2a4a;border-radius:16px;
+    padding:32px;width:440px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.6);">
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
+      <h3 style="color:#e0e0e0;font-size:17px;">🗺️ 出發設定</h3>
+      <span id="modal-floor-label" style="color:#4fc3f7;font-size:14px;font-weight:700;"></span>
+    </div>
+
+    <!-- 模式選擇 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;">
+      <div id="mode-manual" class="mode-card selected" onclick="setMode('manual')">
+        <div style="font-size:28px;margin-bottom:6px;">🎮</div>
+        <div style="font-size:14px;font-weight:700;color:#e0e0e0;">手動模式</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">遇到事件時<br>自行做出選擇</div>
+      </div>
+      <div id="mode-auto" class="mode-card" onclick="setMode('auto')">
+        <div style="font-size:28px;margin-bottom:6px;">⚙️</div>
+        <div style="font-size:14px;font-weight:700;color:#e0e0e0;">自動模式</div>
+        <div style="font-size:11px;color:#94a3b8;margin-top:4px;">依預設設定<br>全程自動執行</div>
+      </div>
+    </div>
+
+    <!-- 自動模式設定（預設隱藏） -->
+    <div id="auto-settings" style="display:none;">
+      <div style="height:1px;background:#1f2937;margin-bottom:20px;"></div>
+
+      <!-- 商人選擇 -->
+      <div style="margin-bottom:16px;">
+        <div style="font-size:11px;color:#94a3b8;letter-spacing:1px;margin-bottom:8px;">🧙 遇到神秘商人時</div>
+        <div style="display:flex;gap:8px;">
+          <label style="flex:1;cursor:pointer;"><input type="radio" name="merchant" value="merch_A" style="display:none;">
+            <div class="opt-btn" data-group="merchant" data-val="merch_A">🔴 拍紅按鈕</div></label>
+          <label style="flex:1;cursor:pointer;"><input type="radio" name="merchant" value="merch_B" style="display:none;">
+            <div class="opt-btn" data-group="merchant" data-val="merch_B">🔵 拍藍按鈕</div></label>
+          <label style="flex:1;cursor:pointer;"><input type="radio" name="merchant" value="merch_leave" checked style="display:none;">
+            <div class="opt-btn selected" data-group="merchant" data-val="merch_leave">🚶 離開</div></label>
+        </div>
+      </div>
+
+      <!-- 購買 EXP -->
+      <div style="margin-bottom:16px;">
+        <div style="font-size:11px;color:#94a3b8;letter-spacing:1px;margin-bottom:8px;">📚 遇到傳授經驗的老者時</div>
+        <div style="display:flex;gap:8px;">
+          <label style="flex:1;cursor:pointer;"><input type="radio" name="buy_exp" value="exp_yes" style="display:none;">
+            <div class="opt-btn" data-group="buy_exp" data-val="exp_yes">💰 支付金幣</div></label>
+          <label style="flex:1;cursor:pointer;"><input type="radio" name="buy_exp" value="exp_no" checked style="display:none;">
+            <div class="opt-btn selected" data-group="buy_exp" data-val="exp_no">🚶 跳過</div></label>
+        </div>
+      </div>
+
+      <!-- 緊急撤退 -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:11px;color:#94a3b8;letter-spacing:1px;margin-bottom:8px;">🩸 HP 低於以下比例時自動撤退</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <?php foreach([0=>['不撤退','#555'],20=>['20%','#ff9800'],30=>['30%','#ef5350'],50=>['50%','#b71c1c']] as $pct=>$info): ?>
+          <label style="cursor:pointer;"><input type="radio" name="retreat_hp" value="<?= $pct ?>" <?= $pct===0?'checked':'' ?> style="display:none;">
+            <div class="opt-btn <?= $pct===0?'selected':'' ?>" data-group="retreat_hp" data-val="<?= $pct ?>"
+                 style="<?= $pct>0?"border-color:{$info[1]};":'' ?>"><?= $info[0] ?></div></label>
+          <?php endforeach; ?>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button onclick="closeAutoModal()"
+        style="flex:1;padding:12px;background:transparent;border:1px solid #2a2a4a;border-radius:8px;color:#94a3b8;cursor:pointer;font-size:14px;">
+        取消
+      </button>
+      <button onclick="startTower()" id="start-btn"
+        style="flex:2;padding:12px;background:linear-gradient(135deg,#1565c0,#4fc3f7);border:none;border-radius:8px;color:#fff;font-weight:700;cursor:pointer;font-size:14px;letter-spacing:1px;">
+        🎮 手動出發！
+      </button>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -240,6 +341,54 @@ const t = setInterval(() => {
 <?php endif; ?>
 const cur = document.getElementById('current-floor');
 if (cur) cur.scrollIntoView({ behavior:'auto', block:'center' });
+
+// ── 出發設定 Modal ──
+let selectedFloor = 1;
+let selectedMode  = 'manual';
+
+function openAutoModal(floor) {
+    selectedFloor = floor;
+    document.getElementById('modal-floor-label').textContent = '第 ' + floor + ' 層';
+    document.getElementById('auto-modal').style.display = 'flex';
+}
+function closeAutoModal() {
+    document.getElementById('auto-modal').style.display = 'none';
+}
+
+function setMode(mode) {
+    selectedMode = mode;
+    document.getElementById('mode-manual').classList.toggle('selected', mode === 'manual');
+    document.getElementById('mode-auto').classList.toggle('selected', mode === 'auto');
+    document.getElementById('auto-settings').style.display = mode === 'auto' ? 'block' : 'none';
+    document.getElementById('start-btn').textContent = mode === 'auto' ? '⚙️ 自動出發！' : '🎮 手動出發！';
+}
+
+// 選項按鈕切換
+document.querySelectorAll('.opt-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const group = btn.dataset.group;
+        document.querySelectorAll(`.opt-btn[data-group="${group}"]`).forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        document.querySelector(`input[name="${group}"][value="${btn.dataset.val}"]`).checked = true;
+    });
+});
+
+function startTower() {
+    if (selectedMode === 'manual') {
+        window.location.href = 'tower.php?floor=' + selectedFloor + '&mode=manual';
+    } else {
+        const merchant   = document.querySelector('input[name="merchant"]:checked').value;
+        const buy_exp    = document.querySelector('input[name="buy_exp"]:checked').value;
+        const retreat_hp = document.querySelector('input[name="retreat_hp"]:checked').value;
+        const params = new URLSearchParams({ floor: selectedFloor, mode: 'auto', merchant, buy_exp, retreat_hp });
+        window.location.href = 'tower.php?' + params.toString();
+    }
+}
+
+// 點背景關閉
+document.getElementById('auto-modal').addEventListener('click', function(e) {
+    if (e.target === this) closeAutoModal();
+});
 </script>
 
 </body>

@@ -59,8 +59,10 @@ $add_line("<p>遭遇敵人：$m_name (HP: $m_hp)</p>", 1000);
 $node_new .= "<div class='combat-log reveal-item hidden-item' data-delay='300'>";
 $node_old .= "<div class='combat-log'>";
 
-$p_dmg = $user['dmg'] + $run['buffs']['dmg']; 
-$p_def = $user['def'] + $run['buffs']['def'];
+// 套入裝備加成
+$eq_bonus = get_equipment_bonus($conn, $user_id);
+$p_dmg = $user['dmg'] + $run['buffs']['dmg'] + $eq_bonus['atk'];
+$p_def = $user['def'] + $run['buffs']['def'] + $eq_bonus['def'];
 
 while ($run['hp'] > 0 && $m_hp > 0) {
     // 玩家攻擊

@@ -21,6 +21,14 @@ if (isset($_GET['floor'])) {
     if ($target_floor < 1 || $target_floor > 20 || $target_floor > $user['max_floor'] + 1) {
         die("<h2 style='color:white; text-align:center;'>領域展開失敗：未解鎖！<br><a href='index.php'>⬅ 返回</a></h2>");
     }
+    // 儲存模式設定
+    $mode = ($_GET['mode'] ?? 'manual') === 'auto' ? 'auto' : 'manual';
+    $_SESSION['auto_settings'] = [
+        'mode'       => $mode,
+        'merchant'   => $_GET['merchant']   ?? 'merch_leave',
+        'buy_exp'    => $_GET['buy_exp']    ?? 'exp_no',
+        'retreat_hp' => (int)($_GET['retreat_hp'] ?? 0),
+    ];
     $_SESSION['run'] = ['floor' => $target_floor, 'node' => 1, 'hp' => $user['max_hp'], 'gold' => 0, 'exp' => 0, 'buffs' => ['dmg'=>0, 'def'=>0, 'max_hp'=>0], 'skill_gains' => [], 'log' => '', 'state' => 'auto'];
     header("Location: tower.php"); exit;
 }
@@ -49,37 +57,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $add_post_line("<h4 class='node-title'>節點 $node / 30 - 抉擇結果</h4>", 500);
 
     if ($run['state'] === 'wait_merchant') {
-        if ($action === 'merch_leave') { 
-            $add_post_line("<p>你轉身離開了商人。</p>"); 
-            $run['state'] = 'auto'; 
+        if ($action === 'merch_leave') {
+            $add_post_line("<p>你轉身離開了商人。</p>");
+            $run['state'] = 'auto';
         } else {
-            $btn = ($action === 'merch_A') ? "紅" : "藍"; 
+            $btn = ($action === 'merch_A') ? "紅" : "藍";
             $add_post_line("<p>按下了 $btn 按鈕...</p>", 500);
-            if (rand(1, 100) <= 50) { 
-                $run['buffs']['dmg'] += 10; 
-                $add_post_line("<p style='color:#4caf50;'>🎉 獲得傷害 +10！</p>"); 
-            } else { 
-                $dmg = floor($user['max_hp'] * 0.3); 
-                $run['hp'] -= $dmg; 
-                $add_post_line("<p style='color:#f44336;'>💀 箱子爆炸，受傷 {$dmg}！</p>"); 
+            if (rand(1, 100) <= 50) {
+                $run['buffs']['dmg'] += 10;
+                $add_post_line("<p style='color:#4caf50;'>🎉 獲得傷害 +10！</p>");
+            } else {
+                $dmg = floor($user['max_hp'] * 0.3);
+                $run['hp'] -= $dmg;
+                $add_post_line("<p style='color:#f44336;'>💀 箱子爆炸，受傷 {$dmg}！</p>");
             }
             $run['state'] = ($run['hp'] > 0) ? 'auto' : 'dead';
         }
     } elseif ($run['state'] === 'wait_exp') {
         if ($action === 'exp_yes' && ($user['gold'] + $run['gold']) >= (5 * $target_floor)) {
-            $run['gold'] -= (5 * $target_floor); 
-            $run['exp'] += (10 * $target_floor); 
+            $run['gold'] -= (5 * $target_floor);
+            $run['exp'] += (10 * $target_floor);
             $add_post_line("<p style='color:#64b5f6;'>✨ 交易成功！獲得 EXP！</p>");
-        } else { 
-            $add_post_line("<p>你繼續前進。</p>"); 
+        } else {
+            $add_post_line("<p>你繼續前進。</p>");
         }
         $run['state'] = 'auto';
     }
     $post_new .= "</div>"; $post_old .= "</div>"; $new_log .= $post_new; $run['log'] .= $post_old; $run['node']++; 
 }
 
+// 自動模式設定
+$auto = $_SESSION['auto_settings'] ?? ['merchant'=>'merch_leave','buy_exp'=>'exp_no','retreat_hp'=>0];
+
 // 事件自動推動迴圈
 while ($run['state'] === 'auto' && $run['node'] <= 30) {
+
+    // HP 緊急撤退判定
+    if ($auto['retreat_hp'] > 0) {
+        $max_hp_now = $user['max_hp'] + $run['buffs']['max_hp'];
+        $hp_pct = $max_hp_now > 0 ? ($run['hp'] / $max_hp_now * 100) : 100;
+        if ($hp_pct <= $auto['retreat_hp']) {
+            $retreat_msg = "<p style='color:#ff9800;font-weight:bold;'>🩸 HP 過低（" . round($hp_pct) . "%），自動撤退！</p>";
+            $node_new = "<div class='node-box reveal-item hidden-item' data-delay='150'>$retreat_msg</div>";
+            $node_old = "<div class='node-box'>$retreat_msg</div>";
+            $new_log .= $node_new; $run['log'] .= $node_old;
+            $run['state'] = 'retreat';
+            break;
+        }
+    }
     $node = $run['node'];
     $event = null; 
     
@@ -101,22 +126,61 @@ while ($run['state'] === 'auto' && $run['node'] <= 30) {
     }
 
     $stop_loop = false;
-    
+
     if ($event !== null) {
         if ($event === 'monster' || $event === 'boss') {
             require 'tower_combat.php';
         } else {
             require 'tower_events.php';
+            // 自動模式：事件要求等待輸入時，直接套用預設設定
+            if ($auto['mode'] === 'auto') {
+                if ($run['state'] === 'wait_merchant') {
+                    $choice = $auto['merchant'];
+                    if ($choice === 'merch_leave') {
+                        $node_new .= "<div class='reveal-item hidden-item' data-delay='400'><p>⚙️ 自動：轉身離開商人。</p></div>";
+                        $node_old .= "<div><p>⚙️ 自動：轉身離開商人。</p></div>";
+                        $run['state'] = 'auto';
+                    } else {
+                        $btn = ($choice === 'merch_A') ? '紅' : '藍';
+                        $node_new .= "<div class='reveal-item hidden-item' data-delay='400'><p>⚙️ 自動：按下 {$btn} 按鈕...</p></div>";
+                        $node_old .= "<div><p>⚙️ 自動：按下 {$btn} 按鈕...</p></div>";
+                        if (rand(1, 100) <= 50) {
+                            $run['buffs']['dmg'] += 10;
+                            $node_new .= "<div class='reveal-item hidden-item' data-delay='600'><p style='color:#4caf50;'>🎉 獲得傷害 +10！</p></div>";
+                            $node_old .= "<div><p style='color:#4caf50;'>🎉 獲得傷害 +10！</p></div>";
+                        } else {
+                            $dmg = floor($user['max_hp'] * 0.3);
+                            $run['hp'] -= $dmg;
+                            $node_new .= "<div class='reveal-item hidden-item' data-delay='600'><p style='color:#f44336;'>💀 箱子爆炸，受傷 {$dmg}！</p></div>";
+                            $node_old .= "<div><p style='color:#f44336;'>💀 箱子爆炸，受傷 {$dmg}！</p></div>";
+                        }
+                        $run['state'] = ($run['hp'] > 0) ? 'auto' : 'dead';
+                    }
+                    $stop_loop = false;
+                } elseif ($run['state'] === 'wait_exp') {
+                    $cost = 5 * $target_floor; $gain = 10 * $target_floor;
+                    if ($auto['buy_exp'] === 'exp_yes' && ($user['gold'] + $run['gold']) >= $cost) {
+                        $run['gold'] -= $cost; $run['exp'] += $gain;
+                        $node_new .= "<div class='reveal-item hidden-item' data-delay='400'><p style='color:#64b5f6;'>⚙️ 自動：支付 {$cost} 金，獲得 {$gain} EXP！</p></div>";
+                        $node_old .= "<div><p style='color:#64b5f6;'>⚙️ 自動：支付 {$cost} 金，獲得 {$gain} EXP！</p></div>";
+                    } else {
+                        $node_new .= "<div class='reveal-item hidden-item' data-delay='400'><p>⚙️ 自動：跳過老者。</p></div>";
+                        $node_old .= "<div><p>⚙️ 自動：跳過老者。</p></div>";
+                    }
+                    $run['state'] = 'auto';
+                    $stop_loop = false;
+                }
+            }
         }
     }
 
     $new_log .= $node_new . "</div>"; $run['log'] .= $node_old . "</div>";
-    if ($stop_loop) break; 
+    if ($stop_loop) break;
     $run['node']++;
 }
 
 // 結算畫面
-if (($run['state'] === 'auto' && $run['node'] > 30) || $run['state'] === 'dead') {
+if (($run['state'] === 'auto' && $run['node'] > 30) || $run['state'] === 'dead' || $run['state'] === 'retreat') {
     $f_gold = $run['gold']; 
     $f_exp = $run['exp'];
     $crit_gain_display = 0; 

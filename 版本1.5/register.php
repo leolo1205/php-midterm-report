@@ -30,7 +30,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $stmt = $conn->prepare("INSERT INTO users (username, password, hp, max_hp, dmg, def, level, exp, gold, max_floor) VALUES (?, ?, 100, 100, 10, 0, 1, 0, 0, 0)");
             $stmt->bind_param('ss', $username, $hash);
             if ($stmt->execute()) {
-                $_SESSION['player_id']   = $conn->insert_id;
+                $new_id = $conn->insert_id;
+                $conn->query("INSERT IGNORE INTO pvp_rankings (user_id, rating, wins, losses, streak) VALUES ($new_id, 1000, 0, 0, 0)");
+                $_SESSION['player_id']   = $new_id;
                 $_SESSION['player_name'] = $username;
                 header('Location: index.php');
                 exit;

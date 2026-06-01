@@ -210,6 +210,8 @@ body{
     <?php nav('index.php','📊','系統總覽',$current); ?>
     <?php nav('players.php','👥','玩家管理',$current); ?>
     <?php nav('records.php','📋','紀錄查詢',$current); ?>
+    <div class="nav-section" style="margin-top:12px;">遊戲系統</div>
+    <?php nav('arena.php','🏟️','競技場管理',$current); ?>
     <div class="nav-section" style="margin-top:12px;">系統層</div>
     <?php nav('db_layer.php','🗄️','資料庫層',$current); ?>
     <?php nav('api_module.php','🔌','API 模組',$current); ?>

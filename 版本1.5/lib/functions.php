@@ -258,6 +258,309 @@ function exp_needed_for_level($level) {
 // ════════════════════════════════════════
 //  API 記錄
 // ════════════════════════════════════════
+//  裝備系統
+// ════════════════════════════════════════
+
+/**
+ * 升級費用與成功機率表（+0 到 +9，代表升到下一級的成本）
+ */
+function get_upgrade_table() {
+    return [
+        0 => ['cost' => 200,   'chance' => 90],
+        1 => ['cost' => 400,   'chance' => 80],
+        2 => ['cost' => 700,   'chance' => 70],
+        3 => ['cost' => 1200,  'chance' => 60],
+        4 => ['cost' => 2000,  'chance' => 50],
+        5 => ['cost' => 3000,  'chance' => 40],
+        6 => ['cost' => 4500,  'chance' => 33],
+        7 => ['cost' => 6500,  'chance' => 25],
+        8 => ['cost' => 9000,  'chance' => 15],
+        9 => ['cost' => 13000, 'chance' =>  8],
+    ];
+}
+
+/**
+ * 裝備加成計算（每級固定值）
+ */
+function equip_bonus_per_level($type) {
+    return ['weapon' => 5, 'armor' => 2, 'helmet' => 20][$type] ?? 0;
+}
+
+/**
+ * 取得玩家所有裝備狀態，若該裝備不存在自動初始化
+ * @return array ['weapon'=>['level'=>...], 'armor'=>..., 'helmet'=>...]
+ */
+function get_equipment($conn, $user_id) {
+    $types  = ['weapon', 'armor', 'helmet'];
+    $result = [];
+    foreach ($types as $t) {
+        $row = $conn->query("SELECT * FROM user_equipment WHERE user_id=$user_id AND equip_type='$t'")->fetch_assoc();
+        if (!$row) {
+            $conn->query("INSERT INTO user_equipment (user_id,equip_type,level,attempts,successes) VALUES ($user_id,'$t',0,0,0)");
+            $row = ['user_id'=>$user_id,'equip_type'=>$t,'level'=>0,'attempts'=>0,'successes'=>0];
+        }
+        $result[$t] = $row;
+    }
+    return $result;
+}
+
+/**
+ * 取得裝備總加成
+ * @return array ['atk'=>..., 'def'=>..., 'hp'=>...]
+ */
+function get_equipment_bonus($conn, $user_id) {
+    $eq = get_equipment($conn, $user_id);
+    return [
+        'atk' => (int)$eq['weapon']['level'] * 5,
+        'def' => (int)$eq['armor']['level']  * 2,
+        'hp'  => (int)$eq['helmet']['level'] * 20,
+    ];
+}
+
+/**
+ * 嘗試強化裝備
+ * @return array ['success','leveled_up','new_level','cost','chance','message']
+ */
+function upgrade_equipment($conn, $user_id, $type) {
+    $types = ['weapon', 'armor', 'helmet'];
+    if (!in_array($type, $types)) return ['success' => false, 'message' => '無效的裝備類型'];
+
+    $table  = get_upgrade_table();
+    $eq     = get_equipment($conn, $user_id);
+    $level  = (int)$eq[$type]['level'];
+
+    if ($level >= 10) return ['success' => false, 'message' => '已達最高等級 +10'];
+
+    $cost   = $table[$level]['cost'];
+    $chance = $table[$level]['chance'];
+
+    // 檢查金幣
+    $user = $conn->query("SELECT gold FROM users WHERE id=$user_id")->fetch_assoc();
+    if ((int)$user['gold'] < $cost) {
+        return ['success' => false, 'message' => "金幣不足（需要 {$cost} 金）"];
+    }
+
+    // 扣除金幣
+    $conn->query("UPDATE users SET gold=gold-$cost WHERE id=$user_id");
+
+    // 判斷成功
+    $rolled   = rand(1, 100);
+    $leveled  = ($rolled <= $chance);
+    $new_level = $leveled ? $level + 1 : $level;
+
+    $conn->query("UPDATE user_equipment SET
+        level=$new_level,
+        attempts=attempts+1,
+        successes=successes+".($leveled?1:0)."
+        WHERE user_id=$user_id AND equip_type='$type'");
+
+    $names = ['weapon'=>'武器','armor'=>'護甲','helmet'=>'頭盔'];
+    return [
+        'success'   => true,
+        'leveled_up'=> $leveled,
+        'old_level' => $level,
+        'new_level' => $new_level,
+        'cost'      => $cost,
+        'chance'    => $chance,
+        'rolled'    => $rolled,
+        'message'   => $leveled
+            ? "✅ 強化成功！{$names[$type]} +{$level} → +{$new_level}"
+            : "❌ 強化失敗！{$names[$type]} 維持 +{$level}（扣除 {$cost} 金）",
+    ];
+}
+
+// ════════════════════════════════════════
+//  PVP 競技場
+// ════════════════════════════════════════
+
+/**
+ * 確保玩家有 pvp_rankings 紀錄，沒有則自動建立
+ */
+function ensure_pvp_ranking($conn, $user_id) {
+    $r = $conn->query("SELECT user_id FROM pvp_rankings WHERE user_id=$user_id")->fetch_assoc();
+    if (!$r) $conn->query("INSERT INTO pvp_rankings (user_id) VALUES ($user_id)");
+}
+
+/**
+ * 取得玩家完整 PVP 資料（含裝備加成、技能）
+ */
+function get_pvp_fighter($conn, $user_id) {
+    $u  = $conn->query("SELECT id,username,dmg,def,hp,max_hp,level FROM users WHERE id=$user_id")->fetch_assoc();
+    $eq = get_equipment_bonus($conn, $user_id);
+    $dodge_lvl = 0; $crit_lvl = 0;
+    $sr = $conn->query("SELECT skill_id,level FROM user_skills WHERE user_id=$user_id");
+    if ($sr) while ($row = $sr->fetch_assoc()) {
+        if ($row['skill_id']==='dodge') $dodge_lvl = (int)$row['level'];
+        if ($row['skill_id']==='crit')  $crit_lvl  = (int)$row['level'];
+    }
+    return [
+        'id'         => (int)$u['id'],
+        'username'   => $u['username'],
+        'level'      => (int)$u['level'],
+        'hp'         => (int)$u['max_hp'] + $eq['hp'],
+        'max_hp'     => (int)$u['max_hp'] + $eq['hp'],
+        'atk'        => (int)$u['dmg']    + $eq['atk'],
+        'def'        => (int)$u['def']    + $eq['def'],
+        'crit_rate'  => 10 + $crit_lvl,
+        'dodge_rate' => 10 + $dodge_lvl,
+    ];
+}
+
+/**
+ * 模擬 PVP 戰鬥，回傳完整結果
+ */
+function simulate_pvp_battle($conn, $challenger_id, $defender_id) {
+    $a = get_pvp_fighter($conn, $challenger_id);
+    $b = get_pvp_fighter($conn, $defender_id);
+
+    // 先攻判定（閃避率高者先攻，相同則隨機）
+    if ($a['dodge_rate'] > $b['dodge_rate'])      $first = 'a';
+    elseif ($b['dodge_rate'] > $a['dodge_rate'])  $first = 'b';
+    else $first = (rand(0,1) ? 'a' : 'b');
+
+    $log = [];
+    $log[] = ['type'=>'system', 'text'=>
+        "⚔️ {$a['username']}（Lv.{$a['level']}）VS {$b['username']}（Lv.{$b['level']}）"];
+    $log[] = ['type'=>'system', 'text'=>
+        ($first==='a' ? "🎯 {$a['username']}" : "🎯 {$b['username']}") . " 閃避率較高，先手出擊！"];
+
+    $round = 0;
+    $order = ($first === 'a') ? ['a','b'] : ['b','a'];
+
+    while ($a['hp'] > 0 && $b['hp'] > 0) {
+        $round++;
+        foreach ($order as $turn) {
+            if ($a['hp'] <= 0 || $b['hp'] <= 0) break;
+            [$atk_f, $def_f] = ($turn==='a') ? [$a,$b] : [$b,$a];
+            $hit = calculate_damage($atk_f['atk'], $def_f['def'], $atk_f['crit_rate'], $def_f['dodge_rate']);
+            if ($hit['dodged']) {
+                $log[] = ['type'=>'dodge', 'text'=>
+                    "💨 {$def_f['username']} 閃避了 {$atk_f['username']} 的攻擊！"];
+            } else {
+                if ($turn==='a') $b['hp'] -= $hit['damage'];
+                else             $a['hp'] -= $hit['damage'];
+                $remaining = max(0, ($turn==='a') ? $b['hp'] : $a['hp']);
+                $prefix = $hit['crit'] ? "💥 爆擊！" : "";
+                $log[] = ['type'=>($hit['crit']?'crit':'attack'), 'text'=>
+                    "{$prefix}{$atk_f['username']} 造成 {$hit['damage']} 傷害。{$def_f['username']} 剩餘 HP：{$remaining}"];
+            }
+        }
+    }
+
+    $winner = ($a['hp'] > 0) ? $a : $b;
+    $loser  = ($a['hp'] > 0) ? $b : $a;
+    $log[]  = ['type'=>'result', 'text'=>"🏆 {$winner['username']} 獲勝！（共 {$round} 回合）"];
+
+    return ['winner_id'=>$winner['id'], 'loser_id'=>$loser['id'], 'rounds'=>$round, 'log'=>$log];
+}
+
+/**
+ * 計算積分變動
+ */
+function calc_rating_change($winner_rating, $loser_rating, $winner_streak) {
+    $diff = $winner_rating - $loser_rating;
+    if ($diff > 100)       { $w_gain = 10; $l_loss = 30; }
+    elseif ($diff < -100)  { $w_gain = 30; $l_loss = 10; }
+    else                   { $w_gain = 20; $l_loss = 20; }
+    if ($winner_streak >= 3) $w_gain += 5;
+    return ['winner_gain' => $w_gain, 'loser_loss' => $l_loss];
+}
+
+/**
+ * 執行 PVP 挑戰（完整流程）
+ */
+function do_pvp_challenge($conn, $challenger_id, $defender_id) {
+    // 不能挑戰自己
+    if ($challenger_id === $defender_id) return ['success'=>false,'message'=>'不能挑戰自己'];
+
+    ensure_pvp_ranking($conn, $challenger_id);
+    ensure_pvp_ranking($conn, $defender_id);
+
+    // 冷卻檢查（1分鐘，用 MySQL 時間避免時區誤差）
+    $remaining = (int)$conn->query("SELECT GREATEST(0, 60 - TIMESTAMPDIFF(SECOND, last_challenge, NOW())) FROM pvp_rankings WHERE user_id=$challenger_id")->fetch_row()[0];
+    if ($remaining > 0) {
+        return ['success'=>false, 'message'=>"挑戰冷卻中，剩餘 {$remaining} 秒"];
+    }
+
+    // 模擬戰鬥
+    $result = simulate_pvp_battle($conn, $challenger_id, $defender_id);
+    $winner_id = $result['winner_id'];
+    $loser_id  = $result['loser_id'];
+
+    // 取得積分
+    $wr = $conn->query("SELECT rating,streak FROM pvp_rankings WHERE user_id=$winner_id")->fetch_assoc();
+    $lr = $conn->query("SELECT rating FROM pvp_rankings WHERE user_id=$loser_id")->fetch_assoc();
+    $change = calc_rating_change((int)$wr['rating'], (int)$lr['rating'], (int)$wr['streak']);
+
+    $w_new = max(0, $wr['rating'] + $change['winner_gain']);
+    $l_new = max(0, $lr['rating'] - $change['loser_loss']);
+
+    // 更新積分
+    $conn->query("UPDATE pvp_rankings SET
+        rating=$w_new, wins=wins+1, streak=streak+1, last_challenge=NOW()
+        WHERE user_id=$winner_id");
+    $conn->query("UPDATE pvp_rankings SET
+        rating=$l_new, losses=losses+1, streak=0
+        WHERE user_id=$loser_id");
+    // 更新挑戰方冷卻（若挑戰方是敗者則上面沒更新 last_challenge）
+    if ($loser_id === $challenger_id)
+        $conn->query("UPDATE pvp_rankings SET last_challenge=NOW() WHERE user_id=$challenger_id");
+
+    // 寫入對戰紀錄
+    $log_json = $conn->real_escape_string(json_encode($result['log'], JSON_UNESCAPED_UNICODE));
+    $w_change = ($winner_id===$challenger_id) ? $change['winner_gain'] : -$change['loser_loss'];
+    $d_change = ($defender_id===$winner_id)   ? $change['winner_gain'] : -$change['loser_loss'];
+    $conn->query("INSERT INTO pvp_battles
+        (challenger_id,defender_id,winner_id,challenger_rating_change,defender_rating_change,battle_log)
+        VALUES ($challenger_id,$defender_id,$winner_id,$w_change,$d_change,'$log_json')");
+
+    $challenger_won    = ($winner_id === $challenger_id);
+    $rating_gain       = $challenger_won ? $change['winner_gain']  : -$change['loser_loss'];
+    $challenger_new_rating = $challenger_won ? $w_new : $l_new;
+
+    return [
+        'success'              => true,
+        'winner_id'            => $winner_id,
+        'loser_id'             => $loser_id,
+        'battle_log'           => $result['log'],
+        'rounds'               => $result['rounds'],
+        'rating_change'        => ($rating_gain >= 0 ? "+{$rating_gain}" : "{$rating_gain}"),
+        'rating_gain'          => $rating_gain,
+        'new_rating'           => $challenger_new_rating,
+        'battle_id'            => $conn->insert_id,
+    ];
+}
+
+/**
+ * 週結算：依積分發放金幣，清零積分
+ */
+function pvp_weekly_settle($conn) {
+    $players = [];
+    $res = $conn->query("SELECT r.user_id, r.rating FROM pvp_rankings r JOIN users u ON r.user_id=u.id WHERE u.is_bot=0 ORDER BY r.rating DESC");
+    while ($r = $res->fetch_assoc()) $players[] = $r;
+
+    $rewarded = 0;
+    foreach ($players as $i => $p) {
+        $rank = $i + 1;
+        if ($rank === 1)          $gold = 10000;
+        elseif ($rank === 2)      $gold = 5000;
+        elseif ($rank === 3)      $gold = 2000;
+        elseif ($rank <= 10)      $gold = 1000;
+        else {
+            $tier = floor(($rank - 11) / 10);
+            $gold = max(0, (int)(500 / pow(2, $tier)));
+        }
+        if ($gold > 0) {
+            $conn->query("UPDATE users SET gold=gold+$gold WHERE id={$p['user_id']}");
+            $rewarded++;
+        }
+    }
+    // 重置真人玩家積分為 1000（電腦玩家不重置）
+    $conn->query("UPDATE pvp_rankings r JOIN users u ON r.user_id=u.id SET r.rating=1000, r.wins=0, r.losses=0, r.streak=0 WHERE u.is_bot=0");
+    return ['settled' => count($players), 'rewarded' => $rewarded];
+}
+
+// ════════════════════════════════════════
 
 /**
  * 寫入 API 呼叫記錄
