@@ -2,29 +2,24 @@
 require_once 'auth.php';
 require_once '../db.php';
 
-function q_val($conn, $sql) {
-    $r = $conn->query($sql);
-    return $r ? ($r->fetch_row()[0] ?? 0) : 0;
-}
-
 // ── 訓練 API 統計 ──
-$train_today   = q_val($conn, "SELECT COUNT(*) FROM api_logs WHERE api_name='train' AND DATE(created_at)=CURDATE()");
-$train_ok      = q_val($conn, "SELECT COUNT(*) FROM api_logs WHERE api_name='train' AND status='success' AND DATE(created_at)=CURDATE()");
+$train_today   = $conn->query("SELECT COUNT(*) FROM api_logs WHERE api_name='train' AND DATE(created_at)=CURDATE()")->fetch_row()[0] ?? 0;
+$train_ok      = $conn->query("SELECT COUNT(*) FROM api_logs WHERE api_name='train' AND status='success' AND DATE(created_at)=CURDATE()")->fetch_row()[0] ?? 0;
 $train_fail    = $train_today - $train_ok;
-$train_avg_ms  = q_val($conn, "SELECT ROUND(AVG(response_ms),1) FROM api_logs WHERE api_name='train' AND DATE(created_at)=CURDATE()");
+$train_avg_ms  = $conn->query("SELECT ROUND(AVG(response_ms),1) FROM api_logs WHERE api_name='train' AND DATE(created_at)=CURDATE()")->fetch_row()[0] ?? 0;
 $train_actions = [];
 foreach (['cooldown_check','start_train','claim_reward','add_stat'] as $a) {
-    $train_actions[$a] = q_val($conn, "SELECT COUNT(*) FROM api_logs WHERE api_name='train' AND action='$a' AND DATE(created_at)=CURDATE()");
+    $train_actions[$a] = $conn->query("SELECT COUNT(*) FROM api_logs WHERE api_name='train' AND action='$a' AND DATE(created_at)=CURDATE()")->fetch_row()[0] ?? 0;
 }
 
 // ── 戰鬥 API 統計 ──
-$combat_today  = q_val($conn, "SELECT COUNT(*) FROM api_logs WHERE api_name='combat' AND DATE(created_at)=CURDATE()");
-$combat_ok     = q_val($conn, "SELECT COUNT(*) FROM api_logs WHERE api_name='combat' AND status='success' AND DATE(created_at)=CURDATE()");
+$combat_today  = $conn->query("SELECT COUNT(*) FROM api_logs WHERE api_name='combat' AND DATE(created_at)=CURDATE()")->fetch_row()[0] ?? 0;
+$combat_ok     = $conn->query("SELECT COUNT(*) FROM api_logs WHERE api_name='combat' AND status='success' AND DATE(created_at)=CURDATE()")->fetch_row()[0] ?? 0;
 $combat_fail   = $combat_today - $combat_ok;
-$combat_avg_ms = q_val($conn, "SELECT ROUND(AVG(response_ms),1) FROM api_logs WHERE api_name='combat' AND DATE(created_at)=CURDATE()");
+$combat_avg_ms = $conn->query("SELECT ROUND(AVG(response_ms),1) FROM api_logs WHERE api_name='combat' AND DATE(created_at)=CURDATE()")->fetch_row()[0] ?? 0;
 $combat_actions = [];
 foreach (['normal_attack','defense_stance','try_escape','victory_settle','defeat_settle'] as $a) {
-    $combat_actions[$a] = q_val($conn, "SELECT COUNT(*) FROM api_logs WHERE api_name='combat' AND action='$a' AND DATE(created_at)=CURDATE()");
+    $combat_actions[$a] = $conn->query("SELECT COUNT(*) FROM api_logs WHERE api_name='combat' AND action='$a' AND DATE(created_at)=CURDATE()")->fetch_row()[0] ?? 0;
 }
 
 // 勝/逃/敗率（取 victory_settle / try_escape(success) / defeat_settle 的比例）
@@ -35,9 +30,7 @@ $lose_rate = round($combat_actions['defeat_settle']  / $settle_total * 100, 1);
 // ── 最近 50 筆 API 記錄 ──
 $logs_res = $conn->query("SELECT * FROM api_logs ORDER BY created_at DESC LIMIT 50");
 $api_logs = [];
-if ($logs_res) {
-    while ($r = $logs_res->fetch_assoc()) $api_logs[] = $r;
-}
+while ($r = $logs_res->fetch_assoc()) $api_logs[] = $r;
 ?>
 <!DOCTYPE html>
 <html lang="zh-TW">

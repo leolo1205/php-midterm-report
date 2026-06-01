@@ -27,7 +27,7 @@ SET time_zone = "+00:00";
 -- 資料表結構 `monster_stats`
 --
 
-CREATE TABLE IF NOT EXISTS `monster_stats` (
+CREATE TABLE `monster_stats` (
   `level` int(11) NOT NULL,
   `hp` int(11) NOT NULL,
   `dmg` int(11) NOT NULL,
@@ -68,7 +68,7 @@ INSERT INTO `monster_stats` (`level`, `hp`, `dmg`, `def`, `exp`, `gold`) VALUES
 -- 資料表結構 `users`
 --
 
-CREATE TABLE IF NOT EXISTS `users` (
+CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `username` varchar(50) NOT NULL,
   `level` int(11) DEFAULT 1,
@@ -96,7 +96,7 @@ INSERT INTO `users` (`id`, `username`, `level`, `exp`, `hp`, `max_hp`, `dmg`, `d
 -- 資料表結構 `user_skills`
 --
 
-CREATE TABLE IF NOT EXISTS `user_skills` (
+CREATE TABLE `user_skills` (
   `id` int(11) NOT NULL,
   `user_id` int(11) NOT NULL,
   `skill_id` varchar(50) NOT NULL,
@@ -150,60 +150,6 @@ ALTER TABLE `users`
 --
 ALTER TABLE `user_skills`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=30;
---
--- 資料表結構 `api_logs`
---
-CREATE TABLE IF NOT EXISTS `api_logs` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `api_name` varchar(50) NOT NULL,
-  `action` varchar(50) DEFAULT NULL,
-  `user_id` int(11) DEFAULT NULL,
-  `status` enum('success','fail') DEFAULT 'success',
-  `response_ms` int(11) DEFAULT 0,
-  `request_data` text DEFAULT NULL,
-  `response_data` text DEFAULT NULL,
-  `created_at` datetime DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- 資料表結構 `battle_logs`
---
-CREATE TABLE IF NOT EXISTS `battle_logs` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `floor` int(11) NOT NULL,
-  `result` enum('win','lose','escape') NOT NULL,
-  `exp_gained` int(11) DEFAULT 0,
-  `gold_gained` int(11) DEFAULT 0,
-  `created_at` datetime DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- 資料表結構 `training_logs`
---
-CREATE TABLE IF NOT EXISTS `training_logs` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `exp_gained` int(11) DEFAULT 0,
-  `stat_points_gained` int(11) DEFAULT 0,
-  `created_at` datetime DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- 資料表結構 `admin_users`
---
-CREATE TABLE IF NOT EXISTS `admin_users` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(50) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `created_at` datetime DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `username` (`username`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
