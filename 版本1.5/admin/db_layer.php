@@ -9,10 +9,11 @@ $db_size  = $conn->query("SELECT ROUND(SUM(data_length+index_length)/1024,1) AS 
 $conn_id  = $conn->thread_id;
 
 // ── 各資料表統計 ──
-$tables = ['users','user_skills','monster_stats','battle_logs','training_logs','api_logs','admin_users'];
+$tables = ['users','user_skills','user_equipment','user_skill_build','monster_stats','battle_logs','training_logs','pvp_rankings','pvp_battles','api_logs','admin_users'];
 $table_stats = [];
 foreach ($tables as $t) {
-    $cnt  = $conn->query("SELECT COUNT(*) FROM `$t`")->fetch_row()[0] ?? 0;
+    $r = $conn->query("SELECT COUNT(*) FROM `$t`");
+    $cnt = ($r !== false) ? ($r->fetch_row()[0] ?? 0) : '—';
     $info = $conn->query("SELECT ROUND((data_length+index_length)/1024,1) AS sz FROM information_schema.tables WHERE table_schema='targame' AND table_name='$t'")->fetch_assoc();
     $table_stats[$t] = ['rows' => $cnt, 'size_kb' => $info['sz'] ?? 0];
 }
@@ -95,21 +96,25 @@ if (isset($_POST['sim_atk'])) {
         <tbody>
         <?php
         $desc = [
-            'users'         => '玩家帳號、屬性、進度',
-            'user_skills'   => '玩家技能熟練度',
-            'monster_stats' => '怪物等級屬性資料（怪物生成來源）',
-            'battle_logs'   => '戰鬥記錄（勝/敗/逃）',
-            'training_logs' => '訓練記錄',
-            'api_logs'      => 'API 呼叫記錄',
-            'admin_users'   => '管理員帳號',
+            'users'            => '玩家帳號、屬性、進度',
+            'user_skills'      => '玩家技能熟練度（爆擊/閃避）',
+            'user_equipment'   => '玩家裝備鍛造進度',
+            'user_skill_build' => '玩家技能樹流派與解鎖節點',
+            'monster_stats'    => '怪物等級屬性資料（怪物生成來源）',
+            'battle_logs'      => '戰鬥記錄（勝/敗/逃）',
+            'training_logs'    => '訓練記錄',
+            'pvp_rankings'     => 'PVP 積分排行',
+            'pvp_battles'      => 'PVP 對戰記錄',
+            'api_logs'         => 'API 呼叫記錄',
+            'admin_users'      => '管理員帳號',
         ];
         foreach ($table_stats as $t => $s): ?>
         <tr>
           <td><code style="color:#4fc3f7;background:#0d0d1a;padding:2px 8px;border-radius:4px;"><?= $t ?></code></td>
           <td style="color:#94a3b8;"><?= $desc[$t] ?? '—' ?></td>
-          <td><b><?= number_format($s['rows']) ?></b></td>
+          <td><b><?= $s['rows'] === '—' ? '—' : number_format($s['rows']) ?></b></td>
           <td><?= $s['size_kb'] ?></td>
-          <td><span class="tag tag-active">正常</span></td>
+          <td><?= $s['rows'] === '—' ? "<span class='tag tag-lose'>缺少資料表</span>" : "<span class='tag tag-active'>正常</span>" ?></td>
         </tr>
         <?php endforeach; ?>
         </tbody>

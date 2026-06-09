@@ -12,17 +12,20 @@ if (isset($_POST['weekly_settle'])) {
     $msg = "✅ 週結算完成！共 {$r['settled']} 位玩家，{$r['rewarded']} 位獲得獎勵。";
 }
 
-$total_battles  = $conn->query("SELECT COUNT(*) FROM pvp_battles")->fetch_row()[0] ?? 0;
-$total_players  = $conn->query("SELECT COUNT(*) FROM pvp_rankings")->fetch_row()[0] ?? 0;
-$today_battles  = $conn->query("SELECT COUNT(*) FROM pvp_battles WHERE DATE(created_at)=CURDATE()")->fetch_row()[0] ?? 0;
+$r1 = $conn->query("SELECT COUNT(*) FROM pvp_battles");
+$total_battles = ($r1 !== false) ? ($r1->fetch_row()[0] ?? 0) : 0;
+$r2 = $conn->query("SELECT COUNT(*) FROM pvp_rankings");
+$total_players = ($r2 !== false) ? ($r2->fetch_row()[0] ?? 0) : 0;
+$r3 = $conn->query("SELECT COUNT(*) FROM pvp_battles WHERE DATE(created_at)=CURDATE()");
+$today_battles = ($r3 !== false) ? ($r3->fetch_row()[0] ?? 0) : 0;
 
 $rankings = [];
 $res = $conn->query("SELECT r.*,u.username,u.level FROM pvp_rankings r JOIN users u ON r.user_id=u.id ORDER BY r.rating DESC LIMIT 20");
-while ($r = $res->fetch_assoc()) $rankings[] = $r;
+if ($res !== false) while ($r = $res->fetch_assoc()) $rankings[] = $r;
 
 $recent = [];
 $res = $conn->query("SELECT b.id,b.created_at,b.challenger_rating_change,b.defender_rating_change,uc.username AS cn,ud.username AS dn,uw.username AS wn FROM pvp_battles b JOIN users uc ON b.challenger_id=uc.id JOIN users ud ON b.defender_id=ud.id JOIN users uw ON b.winner_id=uw.id ORDER BY b.created_at DESC LIMIT 20");
-while ($r = $res->fetch_assoc()) $recent[] = $r;
+if ($res !== false) while ($r = $res->fetch_assoc()) $recent[] = $r;
 ?>
 <!DOCTYPE html>
 <html lang="zh-TW">

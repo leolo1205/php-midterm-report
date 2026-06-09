@@ -36,9 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($stmt->execute()) {
                 $new_id = $conn->insert_id;
                 $pvp = $conn->prepare("INSERT IGNORE INTO pvp_rankings (user_id, rating, wins, losses, streak) VALUES (?, 1000, 0, 0, 0)");
-                $pvp->bind_param('i', $new_id);
-                $pvp->execute();
-                $pvp->close();
+                if ($pvp) {
+                    $pvp->bind_param('i', $new_id);
+                    $pvp->execute();
+                    $pvp->close();
+                }
                 session_regenerate_id(true);
                 $_SESSION['player_id']   = $new_id;
                 $_SESSION['player_name'] = $username;

@@ -135,7 +135,8 @@ function get_train_plans() {
  * @return array ['is_training','seconds_remaining','duration_sec','plan_key']
  */
 function check_training_cooldown($conn, $user_id) {
-    $row = $conn->query("SELECT last_train_time, train_duration FROM users WHERE id=$user_id")->fetch_assoc();
+    $q   = $conn->query("SELECT last_train_time, train_duration FROM users WHERE id=$user_id");
+    $row = ($q !== false) ? $q->fetch_assoc() : null;
     if (!$row || !$row['last_train_time']) {
         return ['is_training' => false, 'seconds_remaining' => 0, 'duration_sec' => 0, 'plan_key' => ''];
     }
@@ -294,9 +295,12 @@ function get_equipment($conn, $user_id) {
     $types  = ['weapon', 'armor', 'helmet'];
     $result = [];
     foreach ($types as $t) {
-        $row = $conn->query("SELECT * FROM user_equipment WHERE user_id=$user_id AND equip_type='$t'")->fetch_assoc();
+        $q   = $conn->query("SELECT * FROM user_equipment WHERE user_id=$user_id AND equip_type='$t'");
+        $row = ($q !== false) ? $q->fetch_assoc() : null;
         if (!$row) {
-            $conn->query("INSERT INTO user_equipment (user_id,equip_type,level,attempts,successes) VALUES ($user_id,'$t',0,0,0)");
+            if ($q !== false) {
+                $conn->query("INSERT INTO user_equipment (user_id,equip_type,level,attempts,successes) VALUES ($user_id,'$t',0,0,0)");
+            }
             $row = ['user_id'=>$user_id,'equip_type'=>$t,'level'=>0,'attempts'=>0,'successes'=>0];
         }
         $result[$t] = $row;
@@ -377,8 +381,10 @@ function upgrade_equipment($conn, $user_id, $type) {
  * 確保玩家有 pvp_rankings 紀錄，沒有則自動建立
  */
 function ensure_pvp_ranking($conn, $user_id) {
-    $r = $conn->query("SELECT user_id FROM pvp_rankings WHERE user_id=$user_id")->fetch_assoc();
-    if (!$r) $conn->query("INSERT INTO pvp_rankings (user_id) VALUES ($user_id)");
+    $q = $conn->query("SELECT user_id FROM pvp_rankings WHERE user_id=$user_id");
+    if ($q !== false && !$q->fetch_assoc()) {
+        $conn->query("INSERT INTO pvp_rankings (user_id) VALUES ($user_id)");
+    }
 }
 
 /**
@@ -609,7 +615,7 @@ function do_pvp_challenge($conn, $challenger_id, $defender_id) {
 function pvp_weekly_settle($conn) {
     $players = [];
     $res = $conn->query("SELECT r.user_id, r.rating FROM pvp_rankings r JOIN users u ON r.user_id=u.id WHERE u.is_bot=0 ORDER BY r.rating DESC");
-    while ($r = $res->fetch_assoc()) $players[] = $r;
+    if ($res !== false) while ($r = $res->fetch_assoc()) $players[] = $r;
 
     $rewarded = 0;
     foreach ($players as $i => $p) {
@@ -688,7 +694,8 @@ function get_archetype_nodes() {
 
 /** 取得玩家技能樹資料，無資料時回傳預設值 */
 function get_skill_build($conn, $user_id) {
-    $row = $conn->query("SELECT archetype, nodes_unlocked FROM user_skill_build WHERE user_id=$user_id")->fetch_assoc();
+    $q   = $conn->query("SELECT archetype, nodes_unlocked FROM user_skill_build WHERE user_id=$user_id");
+    $row = ($q !== false) ? $q->fetch_assoc() : null;
     return $row ?: ['archetype' => null, 'nodes_unlocked' => 0];
 }
 
