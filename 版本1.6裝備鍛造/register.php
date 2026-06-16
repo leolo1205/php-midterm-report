@@ -59,51 +59,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>註冊 — 塔城傳說</title>
+<link rel="stylesheet" href="assets/style.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{
-  min-height:100vh;background:#0d0d1a;
-  display:flex;align-items:center;justify-content:center;
-  font-family:'Segoe UI','微軟正黑體',sans-serif;color:#e0e0e0;
-}
-.bg-glow{position:fixed;pointer-events:none;border-radius:50%;filter:blur(120px);opacity:.15;}
-.bg-glow.g1{width:600px;height:600px;background:#1565c0;top:-100px;left:-200px;}
-.bg-glow.g2{width:500px;height:500px;background:#00695c;bottom:-100px;right:-100px;}
-.card{
-  width:420px;background:#111827;border:1px solid #1f2937;
-  border-radius:20px;padding:48px 44px;
-  box-shadow:0 30px 80px rgba(0,0,0,.7);position:relative;z-index:1;
-}
-.card-header{text-align:center;margin-bottom:32px;}
-.card-header .icon{font-size:52px;display:block;margin-bottom:12px;}
-.card-header h2{font-size:22px;font-weight:700;color:#4fc3f7;letter-spacing:2px;}
-.card-header p{font-size:12px;color:#4b5563;margin-top:6px;letter-spacing:1px;}
-.form-group{margin-bottom:18px;}
-.form-group label{display:block;font-size:11px;color:#6b7280;margin-bottom:7px;letter-spacing:1.5px;text-transform:uppercase;}
-.form-group input{
-  width:100%;padding:12px 15px;
-  background:#0d111a;border:1px solid #1f2937;border-radius:8px;
-  color:#e5e7eb;font-size:14px;transition:border-color .2s,box-shadow .2s;
-}
-.form-group input:focus{outline:none;border-color:#4fc3f7;box-shadow:0 0 0 3px rgba(79,195,247,.08);}
-.btn{
-  width:100%;padding:13px;border:none;border-radius:8px;
-  background:linear-gradient(135deg,#1565c0,#4fc3f7);
-  color:#fff;font-size:14px;font-weight:700;
-  cursor:pointer;letter-spacing:2px;transition:opacity .2s,transform .1s;margin-top:4px;
-}
-.btn:hover{opacity:.9;transform:translateY(-1px);}
-.error-msg{
-  padding:10px 13px;border-radius:7px;font-size:12px;margin-bottom:18px;text-align:center;
-  background:rgba(239,83,80,.1);border:1px solid rgba(239,83,80,.3);color:#ef9a9a;
-}
-.rules{
-  background:#0d111a;border:1px solid #1f2937;border-radius:8px;
-  padding:12px 14px;margin-bottom:22px;font-size:12px;color:#6b7280;line-height:1.9;
-}
-.rules b{color:#94a3b8;}
-.footer-link{text-align:center;margin-top:24px;font-size:12px;color:#4b5563;}
-.footer-link a{color:#4fc3f7;text-decoration:none;font-weight:600;}
+/* register 頁面專屬 */
+body { display:flex; align-items:center; justify-content:center; }
+.bg-glow { position:fixed; pointer-events:none; border-radius:50%; filter:blur(120px); opacity:.15; }
+.bg-glow.g1 { width:600px; height:600px; background:#1565c0; top:-100px; left:-200px; }
+.bg-glow.g2 { width:500px; height:500px; background:#00695c; bottom:-100px; right:-100px; }
+.card { width:420px; background:#111827; border:1px solid #1f2937; border-radius:20px; padding:48px 44px; box-shadow:0 30px 80px rgba(0,0,0,.7); position:relative; z-index:1; }
+.card-header { text-align:center; margin-bottom:32px; }
+.card-header .icon { font-size:52px; display:block; margin-bottom:12px; }
+.card-header h2 { font-size:22px; font-weight:700; color:var(--accent-blue); letter-spacing:2px; }
+.card-header p { font-size:12px; color:#4b5563; margin-top:6px; letter-spacing:1px; }
+.form-group { margin-bottom:18px; }
+.form-group label { display:block; font-size:11px; color:#6b7280; margin-bottom:7px; letter-spacing:1.5px; text-transform:uppercase; }
+.form-group input { width:100%; padding:12px 15px; background:#0d111a; border:1px solid #1f2937; border-radius:8px; color:#e5e7eb; font-size:14px; transition:border-color .2s,box-shadow .2s; }
+.form-group input:focus { outline:none; border-color:var(--accent-blue); box-shadow:0 0 0 3px rgba(79,195,247,.08); }
+.btn { width:100%; padding:13px; border:none; border-radius:8px; background:linear-gradient(135deg,#1565c0,#4fc3f7); color:#fff; font-size:14px; font-weight:700; cursor:pointer; letter-spacing:2px; transition:opacity .2s,transform .1s; margin-top:4px; }
+.btn:hover { opacity:.9; transform:translateY(-1px); }
+.btn:active { transform:translateY(0); }
+.error-msg { padding:10px 13px; border-radius:7px; font-size:12px; margin-bottom:18px; text-align:center; background:rgba(239,83,80,.1); border:1px solid rgba(239,83,80,.3); color:#ef9a9a; }
+.rules { background:#0d111a; border:1px solid #1f2937; border-radius:8px; padding:12px 14px; margin-bottom:22px; font-size:12px; color:#6b7280; line-height:1.9; }
+.rules b { color:#94a3b8; }
+.footer-link { text-align:center; margin-top:24px; font-size:12px; color:#4b5563; }
+.footer-link a { color:var(--accent-blue); text-decoration:none; font-weight:600; }
 </style>
 </head>
 <body>
