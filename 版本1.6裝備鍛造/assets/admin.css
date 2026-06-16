@@ -24,7 +24,7 @@
   z-index: 50;
 }
 .admin-topbar .page-title { font-size: 17px; font-weight: 700; color: var(--text-primary); flex: 1; }
-.admin-topbar .breadcrumb { font-size: 12px; color: #8899b0; }
+.admin-topbar .breadcrumb { font-size: 12px; color: var(--text-muted); }
 .admin-topbar .breadcrumb span { color: var(--accent-blue); }
 .content { padding: 28px; flex: 1; }
 
@@ -45,7 +45,7 @@
 .stat-card:hover { border-color: var(--accent-blue); }
 .stat-card .label { font-size: 12px; color: var(--text-muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 10px; }
 .stat-card .value { font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1; }
-.stat-card .sub { font-size: 12px; color: #7d8fa3; margin-top: 6px; }
+.stat-card .sub { font-size: 12px; color: var(--text-muted); margin-top: 6px; }
 .stat-card.blue .value   { color: var(--accent-blue); }
 .stat-card.green .value  { color: var(--accent-green); }
 .stat-card.yellow .value { color: var(--accent); }
@@ -80,13 +80,13 @@
 }
 .data-table th, .tbl th {
   padding: 12px 16px; text-align: left;
-  font-size: 11px; color: #8899b0;
+  font-size: 11px; color: var(--text-muted);
   letter-spacing: 1.5px; text-transform: uppercase;
   border-bottom: 1px solid #1a1a2e;
   background: #0f1829;
 }
 .data-table td, .tbl td {
-  padding: 13px 16px; font-size: 14px; color: #ccc;
+  padding: 13px 16px; font-size: 14px; color: var(--text-primary);
   border-bottom: 1px solid #1a1a2e;
 }
 .data-table tr:last-child td,
@@ -165,7 +165,7 @@
   box-shadow: 0 20px 60px rgba(0,0,0,.6);
 }
 .modal h3 { font-size: 17px; color: var(--text-primary); margin-bottom: 12px; }
-.modal p { font-size: 14px; color: #888; line-height: 1.6; margin-bottom: 24px; }
+.modal p { font-size: 14px; color: var(--text-muted); line-height: 1.6; margin-bottom: 24px; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 
 /* ── 警告框 ── */
