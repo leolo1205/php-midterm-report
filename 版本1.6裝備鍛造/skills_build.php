@@ -30,81 +30,63 @@ $arch_info = [
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="<?= htmlspecialchars($_csrf, ENT_QUOTES, 'UTF-8') ?>">
 <title>技能樹 — 塔城傳說</title>
+<link rel="stylesheet" href="assets/style.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Segoe UI','微軟正黑體',sans-serif;background:#0d0d1a;color:#e0e0e0;padding:20px;}
-.topbar{display:flex;justify-content:space-between;align-items:center;max-width:920px;margin:0 auto 20px;flex-wrap:wrap;gap:10px;}
-.topbar h1{font-size:22px;color:#ffca28;letter-spacing:2px;}
-.topbar-right{display:flex;gap:10px;align-items:center;}
-.gold{font-size:15px;color:#ffca28;font-weight:bold;}
-.topbar a{color:#94a3b8;font-size:13px;text-decoration:none;padding:6px 14px;border:1px solid #2a2a4a;border-radius:6px;}
-.topbar a:hover{border-color:#4fc3f7;color:#4fc3f7;}
-
-/* 三角相剋說明 */
-.triangle-hint{max-width:920px;margin:0 auto 20px;background:#16213e;border:1px solid #2a2a4a;border-radius:10px;padding:12px 20px;font-size:12px;color:#94a3b8;text-align:center;}
-.triangle-hint b{color:#ffca28;}
-
-/* 流派選擇卡片 */
-.arch-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;max-width:920px;margin:0 auto 24px;}
-.arch-card{background:#16213e;border:2px solid #2a2a4a;border-radius:14px;padding:22px 18px;text-align:center;cursor:pointer;transition:all .2s;}
-.arch-card:hover{transform:translateY(-2px);}
-.arch-card.selected{box-shadow:0 0 0 2px var(--c);}
-.arch-card.selected{border-color:var(--c);}
-.arch-icon{font-size:40px;margin-bottom:10px;}
-.arch-name{font-size:17px;font-weight:700;margin-bottom:6px;}
-.arch-desc{font-size:11px;color:#94a3b8;line-height:1.6;margin-bottom:10px;}
-.arch-beats{font-size:11px;padding:3px 10px;border-radius:10px;display:inline-block;}
-.arch-btn{margin-top:14px;width:100%;padding:9px;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;transition:opacity .2s;}
-.arch-btn:hover{opacity:.85;}
-.arch-btn:disabled{opacity:.4;cursor:not-allowed;}
-
-/* 目前流派 + 節點樹 */
-.build-section{max-width:920px;margin:0 auto;}
-.build-header{background:#16213e;border:1px solid #2a2a4a;border-radius:12px;padding:20px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;}
-.build-header h2{font-size:18px;font-weight:700;}
-.bonus-tags{display:flex;gap:8px;flex-wrap:wrap;}
-.bonus-tag{padding:4px 12px;border-radius:12px;font-size:12px;font-weight:700;}
-
-/* 節點樹 */
-.node-tree{display:flex;flex-direction:column;gap:10px;max-width:920px;margin:0 auto;}
-.node-row{display:flex;align-items:center;gap:12px;}
-.node-connector{width:3px;height:30px;background:#2a2a4a;margin-left:28px;}
-.node-card{flex:1;border:2px solid;border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px;transition:all .2s;}
-.node-card.unlocked{background:rgba(255,255,255,.04);}
-.node-card.available{cursor:pointer;}
-.node-card.available:hover{transform:translateX(3px);}
-.node-card.locked{opacity:.45;filter:grayscale(.6);}
-.node-num{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;}
-.node-info{flex:1;}
-.node-label{font-size:14px;font-weight:700;margin-bottom:3px;}
-.node-desc{font-size:11px;color:#94a3b8;}
-.node-type-badge{font-size:10px;padding:2px 8px;border-radius:6px;font-weight:700;}
-.node-action{flex-shrink:0;text-align:right;}
-.check-icon{font-size:22px;}
-.cost-badge{font-size:12px;color:#ffca28;font-weight:700;white-space:nowrap;}
-.btn-unlock{padding:7px 16px;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s;white-space:nowrap;}
-.btn-unlock:hover{opacity:.85;transform:translateY(-1px);}
-.btn-unlock:disabled{opacity:.4;cursor:not-allowed;transform:none;}
-
-/* 變更流派按鈕 */
-.change-arch-area{max-width:920px;margin:24px auto 0;text-align:center;}
-.btn-change{padding:10px 24px;background:transparent;border:1px solid #4b5563;border-radius:8px;color:#94a3b8;cursor:pointer;font-size:13px;transition:all .2s;}
-.btn-change:hover{border-color:#ef5350;color:#ef5350;}
-
-/* Toast */
-#toast{position:fixed;bottom:30px;right:30px;padding:12px 20px;border-radius:10px;font-size:13px;font-weight:600;opacity:0;transition:opacity .3s;z-index:9999;pointer-events:none;}
-#toast.show{opacity:1;}
-#toast.ok{background:#2e7d32;color:#a5d6a7;border:1px solid #388e3c;}
-#toast.err{background:#b71c1c;color:#ef9a9a;border:1px solid #c62828;}
-
-@media(max-width:640px){
-  .arch-grid{grid-template-columns:1fr;}
-}
+/* skills_build 頁面專屬 */
+.sb-wrap { max-width:920px; margin:0 auto; }
+.page-topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+.page-topbar h1 { font-size:22px; color:var(--accent); letter-spacing:2px; }
+.topbar-right { display:flex; gap:10px; align-items:center; }
+.gold { font-size:15px; color:var(--accent); font-weight:bold; }
+.triangle-hint { margin-bottom:20px; background:var(--bg-card); border:1px solid var(--border); border-radius:10px; padding:12px 20px; font-size:12px; color:var(--text-muted); text-align:center; }
+.triangle-hint b { color:var(--accent); }
+.arch-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:24px; }
+.arch-card { background:var(--bg-card); border:2px solid var(--border); border-radius:14px; padding:22px 18px; text-align:center; cursor:pointer; transition:all .2s; }
+.arch-card:hover { transform:translateY(-2px); }
+.arch-card.selected { box-shadow:0 0 0 2px var(--c); border-color:var(--c); }
+.arch-icon { font-size:40px; margin-bottom:10px; }
+.arch-name { font-size:17px; font-weight:700; margin-bottom:6px; }
+.arch-desc { font-size:11px; color:var(--text-muted); line-height:1.6; margin-bottom:10px; }
+.arch-beats { font-size:11px; padding:3px 10px; border-radius:10px; display:inline-block; }
+.arch-btn { margin-top:14px; width:100%; padding:9px; border:none; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; transition:opacity .2s; }
+.arch-btn:hover { opacity:.85; }
+.arch-btn:disabled { opacity:.4; cursor:not-allowed; }
+.build-section { }
+.build-header { background:var(--bg-card); border:1px solid var(--border); border-radius:12px; padding:20px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; }
+.build-header h2 { font-size:18px; font-weight:700; }
+.bonus-tags { display:flex; gap:8px; flex-wrap:wrap; }
+.bonus-tag { padding:4px 12px; border-radius:12px; font-size:12px; font-weight:700; }
+.node-tree { display:flex; flex-direction:column; gap:10px; }
+.node-row { display:flex; align-items:center; gap:12px; }
+.node-connector { width:3px; height:30px; background:var(--border); margin-left:28px; }
+.node-card { flex:1; border:2px solid; border-radius:12px; padding:14px 18px; display:flex; align-items:center; gap:14px; transition:all .2s; }
+.node-card.unlocked { background:rgba(255,255,255,.04); }
+.node-card.available { cursor:pointer; }
+.node-card.available:hover { transform:translateX(3px); }
+.node-card.locked { opacity:.45; filter:grayscale(.6); }
+.node-num { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:14px; flex-shrink:0; }
+.node-info { flex:1; }
+.node-label { font-size:14px; font-weight:700; margin-bottom:3px; }
+.node-desc { font-size:11px; color:var(--text-muted); }
+.node-type-badge { font-size:10px; padding:2px 8px; border-radius:6px; font-weight:700; }
+.node-action { flex-shrink:0; text-align:right; }
+.check-icon { font-size:22px; }
+.cost-badge { font-size:12px; color:var(--accent); font-weight:700; white-space:nowrap; }
+.btn-unlock { padding:7px 16px; border:none; border-radius:8px; font-size:12px; font-weight:700; cursor:pointer; transition:all .2s; white-space:nowrap; }
+.btn-unlock:hover { opacity:.85; transform:translateY(-1px); }
+.btn-unlock:disabled { opacity:.4; cursor:not-allowed; transform:none; }
+.change-arch-area { margin:24px auto 0; text-align:center; }
+.btn-change { padding:10px 24px; background:transparent; border:1px solid #4b5563; border-radius:8px; color:var(--text-muted); cursor:pointer; font-size:13px; transition:all .2s; }
+.btn-change:hover { border-color:var(--accent-red); color:var(--accent-red); }
+@media(max-width:640px) { .arch-grid{grid-template-columns:1fr;} }
 </style>
 </head>
 <body>
+<?php require '_sidebar.php'; ?>
+<div class="page-body">
+<div class="sb-wrap">
 
-<div class="topbar">
+<div class="page-topbar">
   <h1>⚔️ 技能樹</h1>
   <div class="topbar-right">
     <span class="gold">💰 <span id="gold-display"><?= number_format($user['gold']) ?></span> 金</span>
@@ -237,6 +219,9 @@ $color      = $info['color'];
 <?php endif; ?>
 
 <div id="toast"></div>
+
+</div><!-- /sb-wrap -->
+</div><!-- /page-body -->
 
 <script>
 const _csrf = document.querySelector('meta[name="csrf-token"]').content;

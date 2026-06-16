@@ -4,6 +4,7 @@ require 'db.php';
 
 if (!isset($_SESSION['player_id'])) { header('Location: login.php'); exit; }
 $user_id = (int)$_SESSION['player_id'];
+$user = $conn->query("SELECT username, level FROM users WHERE id=$user_id")->fetch_assoc();
 
 // 撈取玩家技能紀錄
 $skills_query = $conn->query("SELECT * FROM user_skills WHERE user_id = $user_id");
@@ -32,33 +33,31 @@ $dodge_percent = min(100, ($dodge_exp / $dodge_req) * 100);
 <head>
     <title>被動技能</title>
     <meta charset="utf-8">
+    <link rel="stylesheet" href="assets/style.css">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #1e1e24; color: #e0e0e0; display: flex; justify-content: center; padding: 20px; margin: 0;}
-        .container { max-width: 600px; width: 100%; background: #2b2b36; padding: 20px; border-radius: 10px; box-shadow: 0 6px 12px rgba(0,0,0,0.3); border: 1px solid #3f3f4e;}
-        h2 { margin-top: 0; color: #9c27b0; border-bottom: 2px solid #9c27b0; padding-bottom: 10px; }
-        
-        .skill-card { display: flex; align-items: center; background: #353542; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #4caf50; transition: all 0.3s ease;}
-        .skill-locked { filter: grayscale(100%); opacity: 0.6; border: 1px solid #555; }
-        
-        .skill-icon { font-size: 40px; margin-right: 20px; background: #22222b; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; border-radius: 10px;}
-        .skill-info { flex-grow: 1; }
-        .skill-info h4 { margin: 0 0 5px 0; color: #fff; font-size: 18px;}
-        .skill-info p { margin: 0 0 10px 0; color: #bbb; font-size: 14px; line-height: 1.4;}
-        
-        .progress-wrapper { margin-top: 10px; }
-        .progress-label { font-size: 12px; color: #ffeb3b; font-weight: bold; margin-bottom: 4px; display: block; }
-        .progress-container { width: 100%; background-color: #22222b; border-radius: 4px; overflow: hidden; height: 16px; position: relative; border: 1px solid #444;}
-        .progress-bar { height: 100%; background-color: #ff9800; transition: width 0.3s ease; }
-        .progress-bar-dodge { background-color: #81c784; }
-        .progress-text { position: absolute; width: 100%; text-align: center; top: 0; left: 0; font-size: 11px; line-height: 16px; color: #fff; font-weight: bold; text-shadow: 1px 1px 2px #000; }
-        
-        .back-btn { display: block; text-align: center; background-color: #555; color: white; text-decoration: none; padding: 12px; border-radius: 6px; font-weight: bold; margin-top: 20px;}
-        .back-btn:hover { background-color: #666; }
+/* skills 頁面專屬 */
+.skills-wrap { max-width:640px; margin:0 auto; }
+.skills-wrap h2 { margin-top:0; color:#9c27b0; border-bottom:2px solid #9c27b0; padding-bottom:10px; margin-bottom:20px; }
+.skill-card { display:flex; align-items:center; background:#353542; padding:15px; border-radius:8px; margin-bottom:15px; border:1px solid var(--accent-green); transition:all 0.3s ease; }
+.skill-locked { filter:grayscale(100%); opacity:0.6; border:1px solid #555; }
+.skill-icon { font-size:40px; margin-right:20px; background:#22222b; width:60px; height:60px; display:flex; justify-content:center; align-items:center; border-radius:10px; flex-shrink:0; }
+.skill-info { flex-grow:1; }
+.skill-info h4 { margin:0 0 5px 0; color:#fff; font-size:18px; }
+.skill-info p { margin:0 0 10px 0; color:#bbb; font-size:14px; line-height:1.4; }
+.progress-wrapper { margin-top:10px; }
+.progress-label { font-size:12px; color:#ffeb3b; font-weight:bold; margin-bottom:4px; display:block; }
+.progress-container { width:100%; background-color:#22222b; border-radius:4px; overflow:hidden; height:16px; position:relative; border:1px solid #444; }
+.progress-bar-crit  { height:100%; background-color:#ff9800; transition:width 0.3s ease; }
+.progress-bar-dodge { height:100%; background-color:var(--accent-green); transition:width 0.3s ease; }
+.progress-text { position:absolute; width:100%; text-align:center; top:0; left:0; font-size:11px; line-height:16px; color:#fff; font-weight:bold; text-shadow:1px 1px 2px #000; }
+.back-btn { display:block; text-align:center; background-color:#555; color:white; text-decoration:none; padding:12px; border-radius:6px; font-weight:bold; margin-top:20px; }
+.back-btn:hover { background-color:#666; }
     </style>
 </head>
 <body>
-
-<div class="container">
+<?php require '_sidebar.php'; ?>
+<div class="page-body">
+<div class="skills-wrap">
     <h2>📖 被動技能</h2>
     <p style="color:#aaa; font-size: 14px;">滿足特定條件即可獲得熟練度，並自動提升被動效果。</p>
 
@@ -75,7 +74,7 @@ $dodge_percent = min(100, ($dodge_exp / $dodge_req) * 100);
             <div class="progress-wrapper">
                 <span class="progress-label">當前熟練度進度：</span>
                 <div class="progress-container">
-                    <div class="progress-bar" style="width: <?php echo $crit_percent; ?>%;"></div>
+                    <div class="progress-bar-crit" style="width: <?php echo $crit_percent; ?>%;"></div>
                     <div class="progress-text"><?php echo $crit_exp; ?> / <?php echo $crit_req; ?></div>
                 </div>
             </div>
@@ -103,7 +102,8 @@ $dodge_percent = min(100, ($dodge_exp / $dodge_req) * 100);
     </div>
 
     <a href="index.php" class="back-btn">⬅ 返回城鎮</a>
-</div>
+</div><!-- /skills-wrap -->
+</div><!-- /page-body -->
 
 </body>
 </html>
