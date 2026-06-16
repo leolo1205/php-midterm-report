@@ -13,7 +13,7 @@ if (!isset($_SESSION['player_id'])) {
 $user_id = (int)$_SESSION['player_id'];
 $_csrf = csrf_token();
 
-$user = $conn->query("SELECT username, gold FROM users WHERE id=$user_id")->fetch_assoc();
+$user = $conn->query("SELECT username, gold, level FROM users WHERE id=$user_id")->fetch_assoc();
 $eq = get_equipment($conn, $user_id);
 
 
@@ -47,138 +47,55 @@ $max_level = forge_max_level();
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>鍛造 — 塔城傳說</title>
 <meta name="csrf-token" content="<?= htmlspecialchars($_csrf, ENT_QUOTES, 'UTF-8') ?>">
+<link rel="stylesheet" href="assets/style.css">
 <style>
-*{margin:0;padding:0;box-sizing:border-box;}
-body{font-family:'Segoe UI','微軟正黑體',sans-serif;background:#0d0d1a;color:#e0e0e0;padding:20px;}
-.topbar{display:flex;justify-content:space-between;align-items:center;max-width:1080px;margin:0 auto 20px;flex-wrap:wrap;gap:10px;}
-.topbar h1{font-size:24px;color:#ffca28;letter-spacing:2px;}
-.topbar-right{display:flex;gap:14px;align-items:center;flex-wrap:wrap;}
-.gold{font-size:16px;color:#ffca28;font-weight:bold;}
-.topbar a{color:#94a3b8;font-size:13px;text-decoration:none;padding:8px 18px;border:1px solid #2a2a4a;border-radius:8px;}
-.topbar a:hover{border-color:#4fc3f7;color:#4fc3f7;}
-
-.tabs{display:flex;gap:10px;max-width:1080px;margin:0 auto 24px;flex-wrap:wrap;}
-.tab{
-    min-width:170px;
-    padding:14px 28px;
-    border-radius:9px;
-    border:1px solid #2a2a4a;
-    background:#16213e;
-    color:#94a3b8;
-    cursor:pointer;
-    font-size:15px;
-    font-weight:700;
-    transition:all .2s;
-    text-align:left;
-}
-.tab:hover{border-color:#4fc3f7;color:#e0e0e0;}
-.tab.active{border-color:#ffca28;color:#ffca28;background:rgba(255,202,40,.08);}
-.tab .tab-level{font-size:12px;color:#64748b;margin-left:6px;}
-
-.tab-content{display:none;max-width:1080px;margin:0 auto;}
-.tab-content.active{display:block;}
-
-.forge-card{
-    background:#16213e;
-    border:1px solid #2a2a4a;
-    border-radius:16px;
-    padding:34px 36px;
-    margin-bottom:20px;
-    box-shadow:0 12px 28px rgba(0,0,0,.28);
-}
-.equip-header{display:flex;align-items:center;gap:18px;margin-bottom:28px;}
-.equip-icon{font-size:54px;width:74px;text-align:center;}
-.equip-title h2{font-size:24px;font-weight:800;}
-.equip-title p{font-size:14px;color:#94a3b8;margin-top:6px;line-height:1.7;}
-
-.level-bar{margin:28px 0 24px;}
-.bar-track{height:16px;background:#0d0d1a;border-radius:999px;overflow:hidden;border:1px solid #2a2a4a;}
-.bar-fill{height:100%;border-radius:999px;transition:width .35s ease;}
-.bar-labels{display:flex;justify-content:space-between;margin-top:10px;font-size:12px;color:#64748b;}
-.bar-mid{font-weight:700;}
-
-.info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:28px;}
-.info-card{background:#0d0d1a;border:1px solid #111827;border-radius:10px;padding:18px;text-align:center;}
-.info-card .value{font-size:25px;font-weight:800;margin-bottom:6px;}
-.info-card .label{font-size:12px;color:#64748b;}
-
-.action-row{display:grid;grid-template-columns:1fr auto;gap:16px;align-items:center;}
-.next-box{
-    background:#101629;
-    border:1px solid #25304f;
-    border-radius:12px;
-    padding:16px 18px;
-    display:flex;
-    justify-content:space-between;
-    gap:14px;
-    flex-wrap:wrap;
-}
-.next-box span{font-size:13px;color:#94a3b8;}
-.next-box b{color:#ffca28;}
-.btn-upgrade{
-    min-width:210px;
-    padding:15px 24px;
-    border:none;
-    border-radius:10px;
-    background:linear-gradient(135deg,#c79100,#ffca28);
-    color:#111827;
-    font-size:15px;
-    font-weight:900;
-    cursor:pointer;
-    letter-spacing:1px;
-    transition:transform .12s,filter .2s;
-}
-.btn-upgrade:hover{filter:brightness(1.08);}
-.btn-upgrade:active{transform:scale(.98);}
-.btn-upgrade:disabled{background:#374151;color:#6b7280;cursor:not-allowed;filter:none;}
-
-.max-note{text-align:center;color:#ffca28;font-size:16px;font-weight:800;margin-top:18px;}
-.small-note{font-size:12px;color:#64748b;margin-top:12px;text-align:center;line-height:1.7;}
-
-#toast{
-    position:fixed;
-    right:28px;
-    bottom:28px;
-    max-width:460px;
-    padding:14px 18px;
-    border-radius:12px;
-    font-size:14px;
-    font-weight:700;
-    line-height:1.55;
-    opacity:0;
-    transform:translateY(12px);
-    transition:opacity .25s,transform .25s;
-    z-index:9999;
-    pointer-events:none;
-    box-shadow:0 16px 35px rgba(0,0,0,.4);
-}
-#toast.show{opacity:1;transform:translateY(0);}
-#toast.ok{background:#12351f;color:#a5d6a7;border:1px solid #2e7d32;}
-#toast.err{background:#3a1414;color:#ef9a9a;border:1px solid #b71c1c;}
-#toast.info{background:#111827;color:#cbd5e1;border:1px solid #334155;}
-
-@media(max-width:760px){
-    body{padding:14px;}
-    .topbar h1{font-size:21px;}
-    .tabs{gap:8px;}
-    .tab{flex:1;min-width:100px;text-align:center;padding:12px 10px;}
-    .forge-card{padding:24px 18px;}
-    .equip-header{align-items:flex-start;}
-    .equip-icon{font-size:42px;width:52px;}
-    .equip-title h2{font-size:21px;}
-    .info-grid{grid-template-columns:1fr 1fr;}
-    .action-row{grid-template-columns:1fr;}
-    .btn-upgrade{width:100%;min-width:0;}
+/* forge 頁面專屬 */
+.forge-container { max-width: 1080px; margin: 0 auto; }
+.topbar { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+.topbar h1 { font-size:24px; color:var(--accent); letter-spacing:2px; }
+.topbar-right { display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+.gold { font-size:16px; color:var(--accent); font-weight:bold; }
+.tabs { display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap; }
+.tab { min-width:170px; padding:14px 28px; border-radius:9px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-muted); cursor:pointer; font-size:15px; font-weight:700; transition:all .2s; text-align:left; }
+.tab:hover { border-color:var(--accent-blue); color:var(--text-primary); }
+.tab.active { border-color:var(--accent); color:var(--accent); background:rgba(255,202,40,.08); }
+.tab .tab-level { font-size:12px; color:var(--text-dim); margin-left:6px; }
+.tab-content { display:none; }
+.tab-content.active { display:block; }
+.forge-card { background:var(--bg-card); border:1px solid var(--border); border-radius:16px; padding:34px 36px; margin-bottom:20px; box-shadow:0 12px 28px rgba(0,0,0,.28); }
+.equip-header { display:flex; align-items:center; gap:18px; margin-bottom:28px; }
+.equip-icon { font-size:54px; width:74px; text-align:center; }
+.equip-title h2 { font-size:24px; font-weight:800; }
+.equip-title p { font-size:14px; color:var(--text-muted); margin-top:6px; line-height:1.7; }
+.level-bar { margin:28px 0 24px; }
+.bar-mid { font-weight:700; }
+.action-row { display:grid; grid-template-columns:1fr auto; gap:16px; align-items:center; }
+.next-box { background:#101629; border:1px solid #25304f; border-radius:12px; padding:16px 18px; display:flex; justify-content:space-between; gap:14px; flex-wrap:wrap; }
+.next-box span { font-size:13px; color:var(--text-muted); }
+.next-box b { color:var(--accent); }
+.btn-upgrade { min-width:210px; padding:15px 24px; border:none; border-radius:10px; background:linear-gradient(135deg,#c79100,#ffca28); color:#111827; font-size:15px; font-weight:900; cursor:pointer; letter-spacing:1px; transition:transform .12s,filter .2s; }
+.btn-upgrade:hover { filter:brightness(1.08); }
+.btn-upgrade:active { transform:scale(.98); }
+.btn-upgrade:disabled { background:#374151; color:#6b7280; cursor:not-allowed; filter:none; }
+.max-note { text-align:center; color:var(--accent); font-size:16px; font-weight:800; margin-top:18px; }
+.small-note { font-size:12px; color:var(--text-dim); margin-top:12px; text-align:center; line-height:1.7; }
+@media(max-width:760px) {
+  .tabs{gap:8px;} .tab{flex:1;min-width:100px;text-align:center;padding:12px 10px;}
+  .forge-card{padding:24px 18px;} .equip-icon{font-size:42px;width:52px;}
+  .equip-title h2{font-size:21px;} .action-row{grid-template-columns:1fr;}
+  .btn-upgrade{width:100%;min-width:0;}
 }
 </style>
 </head>
 <body>
+<?php require '_sidebar.php'; ?>
+<div class="page-body">
+<div class="forge-container">
 
 <div class="topbar">
     <h1>⚒️ 裝備鍛造</h1>
     <div class="topbar-right">
         <span class="gold">💰 <span id="gold-display"><?= number_format((int)$user['gold']) ?></span> 金</span>
-        <a href="index.php">← 返回城鎮</a>
     </div>
 </div>
 
@@ -475,5 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+</div><!-- /forge-container -->
+</div><!-- /page-body -->
 </body>
 </html>
