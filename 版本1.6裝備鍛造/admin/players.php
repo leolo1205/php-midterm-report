@@ -63,9 +63,13 @@ if (isset($_GET['id'])) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>玩家管理 — 後台管理</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/admin.css">
+</head>
+<body>
 <?php include '_sidebar.php'; ?>
 
-  <div class="topbar">
+  <div class="admin-topbar">
     <div class="page-title">👥 玩家管理</div>
     <div class="breadcrumb">後台管理 / <span>玩家管理</span></div>
   </div>

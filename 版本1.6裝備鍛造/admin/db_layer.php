@@ -134,9 +134,13 @@ if (isset($_POST['sim_atk'])) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>資料庫層 — 後台管理</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/admin.css">
+</head>
+<body>
 <?php include '_sidebar.php'; ?>
 
-    <div class="topbar">
+    <div class="admin-topbar">
         <div class="page-title">🗄️ 資料庫層</div>
         <div class="breadcrumb">後台管理 / <span>資料庫層</span></div>
     </div>

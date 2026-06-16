@@ -56,6 +56,8 @@ if ($tab === 'battle') {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>紀錄查詢 — 後台管理</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/admin.css">
 <style>
 .pagination{display:flex;gap:6px;align-items:center;padding:16px 22px;}
 .page-btn{
@@ -66,9 +68,11 @@ if ($tab === 'battle') {
 .page-btn:hover,.page-btn.active{border-color:#4fc3f7;color:#4fc3f7;background:rgba(79,195,247,.1);}
 .page-info{font-size:12px;color:#8899b0;margin-left:auto;}
 </style>
+</head>
+<body>
 <?php include '_sidebar.php'; ?>
 
-  <div class="topbar">
+  <div class="admin-topbar">
     <div class="page-title">📋 紀錄查詢</div>
     <div class="breadcrumb">後台管理 / <span>紀錄查詢</span></div>
   </div>

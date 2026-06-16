@@ -28,6 +28,7 @@ $trainings = $pdo->query("
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>後台 — 紀錄查詢</title>
 <link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/admin.css">
 <style>
   .admin-wrap { display:flex; min-height:100vh; }
   .sidebar {

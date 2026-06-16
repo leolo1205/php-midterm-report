@@ -23,10 +23,14 @@ $rank_floor = $conn->query("SELECT id,username,level,max_floor FROM users WHERE 
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>系統總覽 — 後台管理</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/admin.css">
+</head>
+<body>
 <?php include '_sidebar.php'; ?>
 
   <!-- TOPBAR -->
-  <div class="topbar">
+  <div class="admin-topbar">
     <div class="page-title">📊 系統總覽</div>
     <div class="breadcrumb">後台管理 / <span>系統總覽</span></div>
     <div style="font-size:12px;color:#8899b0;"><?= date('Y-m-d H:i:s') ?></div>

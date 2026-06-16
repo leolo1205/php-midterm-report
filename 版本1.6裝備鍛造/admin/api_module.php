@@ -48,9 +48,13 @@ if ($logs_res) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>API 模組 — 後台管理</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/admin.css">
+</head>
+<body>
 <?php include '_sidebar.php'; ?>
 
-  <div class="topbar">
+  <div class="admin-topbar">
     <div class="page-title">🔌 API 模組</div>
     <div class="breadcrumb">後台管理 / <span>API 模組</span></div>
   </div>
