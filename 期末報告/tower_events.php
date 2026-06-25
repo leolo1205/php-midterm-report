@@ -4,7 +4,7 @@
 if ($event === 'merchant') {
     $run['state'] = 'wait_merchant';
     if (($auto['mode'] ?? 'manual') === 'manual') {
-        $form_html = "<p>「嘿嘿嘿... 冒險者，要不要來抽個盲盒？一半天堂，一半地獄喔...」</p><form method='post' style='display:flex; gap:10px; margin-top:10px; flex-wrap: wrap;'>" . csrf_field() . "<button type='submit' name='action' value='merch_A' class='btn-action' style='background:#f44336;'>🔴 拍下紅色按鈕</button><button type='submit' name='action' value='merch_B' class='btn-action' style='background:#2196f3;'>🔵 拍下藍色按鈕</button><button type='submit' name='action' value='merch_leave' class='btn-action' style='background:#757575;'>🚶 轉身離開</button></form>";
+        $form_html = "<p>「嘿嘿嘿... 冒險者，要不要來抽個盲盒？一半天堂，一半地獄喔...」</p><form method='post' style='display:flex; gap:10px; margin-top:10px; flex-wrap: wrap;' onsubmit='this.querySelectorAll(\"button\").forEach(b=>{b.disabled=true;b.style.opacity=\"0.5\";});'>" . csrf_field() . "<button type='submit' name='action' value='merch_A' class='btn-action' style='background:#f44336;'>🔴 拍下紅色按鈕</button><button type='submit' name='action' value='merch_B' class='btn-action' style='background:#2196f3;'>🔵 拍下藍色按鈕</button><button type='submit' name='action' value='merch_leave' class='btn-action' style='background:#757575;'>🚶 轉身離開</button></form>";
         $add_line($form_html, 100);
         $stop_loop = true;
     } else {
@@ -15,7 +15,7 @@ if ($event === 'merchant') {
     $run['state'] = 'wait_exp';
     $cost = 5 * $target_floor; $gain = 10 * $target_floor;
     if (($auto['mode'] ?? 'manual') === 'manual') {
-        $form_html = "<p>「知識就是力量，給我 $cost 金幣，我傳授你 $gain 經驗值。」</p><form method='post' style='display:flex; gap:10px; margin-top:10px;'>" . csrf_field() . "<button type='submit' name='action' value='exp_yes' class='btn-action' style='background:#4caf50;'>💰 支付金幣</button><button type='submit' name='action' value='exp_no' class='btn-action' style='background:#757575;'>🚶 轉身離開</button></form>";
+        $form_html = "<p>「知識就是力量，給我 $cost 金幣，我傳授你 $gain 經驗值。」</p><form method='post' style='display:flex; gap:10px; margin-top:10px;' onsubmit='this.querySelectorAll(\"button\").forEach(b=>{b.disabled=true;b.style.opacity=\"0.5\";});'>" . csrf_field() . "<button type='submit' name='action' value='exp_yes' class='btn-action' style='background:#4caf50;'>💰 支付金幣</button><button type='submit' name='action' value='exp_no' class='btn-action' style='background:#757575;'>🚶 轉身離開</button></form>";
         $add_line($form_html, 100);
         $stop_loop = true;
     } else {

@@ -98,6 +98,10 @@ while ($run['hp'] > 0 && $m_hp > 0) {
     }
 
     // ── 玩家攻擊 ──
+    // 先疊加本回合侵蝕，再套用（當回合即生效）
+    if (has_skill($p_build, 'corrosion_curse')) {
+        $enemy_corr = min(50, $enemy_corr + 0.5);
+    }
     $eff_m_def_corroded = max(0, (int)($m_def * (1 - $enemy_corr / 100)));  // 侵蝕削減後的怪物防禦（百分比削減）
     $eff_m_def = ($boss_vars['defense_turns'] > 0) ? $eff_m_def_corroded * 3 : $eff_m_def_corroded;
 
@@ -173,12 +177,16 @@ while ($run['hp'] > 0 && $m_hp > 0) {
                 $node_old  .= "<div><span style='color:#ce93d8;'>🛡️ 不滅之軀：傷害減半！</span></div>";
             }
 
-            // 受傷後技能效果（荊棘積累、報復之刃）
+            // 受傷後技能效果（荊棘反彈、報復之刃）
             $dtaken = $mon_hit['hit'] ? $mon_hit['damage'] : 0;
             $take_r = skill_on_player_take_dmg($p_build, $skill_ss, $mon_hit, $dtaken);
             if ($take_r['log']) {
                 $node_new .= "<div class='reveal-item hidden-item' data-delay='150'><span style='color:#4fc3f7;'>{$take_r['log']}</span></div>";
                 $node_old .= "<div><span style='color:#4fc3f7;'>{$take_r['log']}</span></div>";
+            }
+            if (!empty($take_r['reflect']) && $take_r['reflect'] > 0) {
+                $m_hp -= $take_r['reflect'];
+                if ($m_hp <= 0) break;
             }
         }
     }

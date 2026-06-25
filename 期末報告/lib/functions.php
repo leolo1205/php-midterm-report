@@ -392,7 +392,7 @@ function get_archetype_nodes() {
         'guardian' => [
             1 => ['type' => 'stat', 'label' => 'DEF +2', 'def' => 2],
             2 => ['type' => 'stat', 'label' => 'DEF +2', 'def' => 2],
-            3 => ['type' => 'skill', 'label' => '🌵 荊棘之壁', 'skill' => 'thorn_wall', 'desc' => '受傷時積累荊棘值，每4回合反彈積累×62%'],
+            3 => ['type' => 'skill', 'label' => '🌵 荊棘之壁', 'skill' => 'thorn_wall', 'desc' => '每次受傷立即將實際承受傷害反彈給敵方'],
             4 => ['type' => 'stat', 'label' => 'DEF +3', 'def' => 3],
             5 => ['type' => 'stat', 'label' => 'HP +20', 'hp' => 20],
             6 => ['type' => 'skill', 'label' => '⚙️ 鋼鐵意志', 'skill' => 'iron_will', 'desc' => 'HP低於40%時防禦力×1.3'],
@@ -512,11 +512,6 @@ function skill_round_start($build, &$ss, $my_hp, $my_max_hp) {
         $log .= "🌿 生命脈動：回復 {$heal} HP。";
     }
 
-    if (has_skill($build, 'thorn_wall') && $ss['round'] % 4 === 0 && $ss['thorns_acc'] > 0) {
-        $reflect = (int)($ss['thorns_acc'] * 0.62);
-        $log .= "🌵 荊棘之壁爆發：反彈 {$reflect} 傷害！";
-        $ss['thorns_acc'] = 0;
-    }
 
     return compact('heal', 'reflect', 'log');
 }
@@ -549,8 +544,7 @@ function skill_on_player_attack($build, &$ss, $hit_result, $enemy_hp, $enemy_max
         }
     }
 
-    if (has_skill($build, 'corrosion_curse')) {
-        $enemy_corr = min(50, $enemy_corr + 0.5);
+    if (has_skill($build, 'corrosion_curse') && $enemy_corr > 0) {
         $td = (int)($enemy_corr * 1.15);
         $extra += $td;
         $log .= "🧪 侵蝕：DEF -{$enemy_corr}%，追加真傷 {$td}。";
@@ -569,8 +563,11 @@ function skill_on_player_take_dmg($build, &$ss, $hit_result, $dmg_taken) {
         return ['log' => $log];
     }
 
+    $reflect = 0;
+
     if (has_skill($build, 'thorn_wall') && $dmg_taken > 0) {
-        $ss['thorns_acc'] += $dmg_taken;
+        $reflect = $dmg_taken;
+        $log .= "🌵 荊棘反彈 {$reflect} 傷害！";
     }
 
     if (has_skill($build, 'vengeance_blade') && $hit_result['crit']) {
@@ -578,7 +575,7 @@ function skill_on_player_take_dmg($build, &$ss, $hit_result, $dmg_taken) {
         $log .= "⚡ 報復之刃就緒！";
     }
 
-    return ['log' => $log];
+    return ['log' => $log, 'reflect' => $reflect];
 }
 
 /**
