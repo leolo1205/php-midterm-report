@@ -47,7 +47,7 @@ function check_training_cooldown($conn, $user_id) {
     }
 
     $duration = (int)$row['train_duration'];
-    $elapsed = time() - strtotime($row['last_train_time']);
+    $elapsed = time() - strtotime($row['last_train_time'] . ' UTC');
     $remaining = max(0, $duration - $elapsed);
 
     if ($elapsed >= $duration) {
