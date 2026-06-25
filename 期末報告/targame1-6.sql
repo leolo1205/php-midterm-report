@@ -521,6 +521,7 @@ CREATE TABLE `monster_stats` (
 -- 傾印資料表的資料 `monster_stats`
 --
 
+TRUNCATE TABLE `monster_stats`;
 INSERT INTO `monster_stats` (`level`, `hp`, `dmg`, `def`, `exp`, `gold`) VALUES
 (1, 40, 12, 0, 15, 10),
 (2, 60, 15, 1, 20, 15),
