@@ -1,4 +1,5 @@
 ﻿<?php
+ob_start();
 session_start();
 
 // 玩家已登入直接進主城鎮
