@@ -16,6 +16,7 @@ $stmt->bind_param('i', $user_id);
 $stmt->execute();
 $user = $stmt->get_result()->fetch_assoc();
 $stmt->close();
+$_eff = get_player_effective_stats($conn, $user_id);
 
 $monster_db = [];
 $mob_res = $conn->query("SELECT * FROM monster_stats");
@@ -68,7 +69,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['floor'])) {
         'buy_exp'    => in_array($buy_exp_val,  $valid_buy_exp,  true) ? $buy_exp_val  : 'exp_no',
         'retreat_hp' => 0,
     ];
-    $_SESSION['run'] = ['floor' => $target_floor, 'node' => 1, 'hp' => $user['max_hp'], 'gold' => 0, 'exp' => 0, 'buffs' => ['dmg'=>0, 'def'=>0, 'max_hp'=>0], 'skill_gains' => [], 'log' => '', 'state' => 'auto', 'retreat_insured' => $retreat_insure];
+    $_SESSION['run'] = ['floor' => $target_floor, 'node' => 1, 'hp' => (int)$_eff['hp']['value'], 'gold' => 0, 'exp' => 0, 'buffs' => ['dmg'=>0, 'def'=>0, 'max_hp'=>0], 'skill_gains' => [], 'log' => '', 'state' => 'auto', 'retreat_insured' => $retreat_insure];
     header("Location: tower.php"); exit;
 }
 if (!isset($_SESSION['run'])) { header("Location: index.php"); exit; }
@@ -114,7 +115,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $run['buffs']['dmg'] += 10;
                 $add_post_line("<p style='color:#4caf50;'>🎉 獲得傷害 +10！</p>");
             } else {
-                $eff_max_hp = $user['max_hp'] + (int)($run['buffs']['max_hp'] ?? 0);
+                $eff_max_hp = (int)$_eff['hp']['value'] + (int)($run['buffs']['max_hp'] ?? 0);
                 $dmg = floor($eff_max_hp * 0.3);
                 $run['hp'] -= $dmg;
                 $add_post_line("<p style='color:#f44336;'>💀 箱子爆炸，受傷 {$dmg}！</p>");
@@ -191,7 +192,7 @@ while ($run['state'] === 'auto' && $run['node'] <= 30) {
                             $node_new .= "<div class='reveal-item hidden-item' data-delay='600'><p style='color:#4caf50;'>🎉 獲得傷害 +10！</p></div>";
                             $node_old .= "<div><p style='color:#4caf50;'>🎉 獲得傷害 +10！</p></div>";
                         } else {
-                            $eff_max_hp = $user['max_hp'] + (int)($run['buffs']['max_hp'] ?? 0);
+                            $eff_max_hp = (int)$_eff['hp']['value'] + (int)($run['buffs']['max_hp'] ?? 0);
                             $dmg = floor($eff_max_hp * 0.3);
                             $run['hp'] -= $dmg;
                             $node_new .= "<div class='reveal-item hidden-item' data-delay='600'><p style='color:#f44336;'>💀 箱子爆炸，受傷 {$dmg}！</p></div>";

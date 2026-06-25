@@ -27,7 +27,7 @@ if ($event === 'merchant') {
     $add_line("<p>💰 發現寶箱！獲得 <span style='color:gold;'>$found_gold 金幣</span>！</p>", 1000);
 
 } elseif ($event === 'heal') {
-    $eff_max_hp = $user['max_hp'] + $run['buffs']['max_hp'];
+    $eff_max_hp = (int)$_eff['hp']['value'] + (int)($run['buffs']['max_hp'] ?? 0);
     $heal = floor($eff_max_hp * 0.2);
     $run['hp'] = min($eff_max_hp, $run['hp'] + $heal);
     $add_line("<p>🧪 找到神聖甘泉，恢復 20% 生命。<span style='color:#4caf50;'>+$heal HP</span> (目前: {$run['hp']})</p>", 1000);
@@ -44,7 +44,7 @@ if ($event === 'merchant') {
 } elseif ($event === 'rest') {
     $rest_texts = ["你找到了一個避風的角落，生起營火稍微休息了一下。", "周圍暫時沒有危險，你坐下來整理裝備，喘了口氣。", "此處風景不錯，你停下腳步欣賞了一會兒，感覺精神好多了。", "你靠在樹幹上閉目養神，微風拂過，帶走了一絲疲憊。"];
     $random_text = $rest_texts[array_rand($rest_texts)];
-    $eff_max_hp = $user['max_hp'] + $run['buffs']['max_hp'];
+    $eff_max_hp = (int)$_eff['hp']['value'] + (int)($run['buffs']['max_hp'] ?? 0);
     $heal = max(1, floor($eff_max_hp * 0.05));
     $run['hp'] = min($eff_max_hp, $run['hp'] + $heal);
     $add_line("<p>⛺ $random_text <span style='color:#4caf50;'>回復 $heal HP</span> (目前: {$run['hp']})</p>", 1000);
@@ -67,12 +67,13 @@ if ($event === 'merchant') {
 
 } elseif ($event === 'blessing') {
     // 祝福每次固定增加基礎值的 20%，避免複利無限成長
-    $max_hp_cap = $user['max_hp'] * 2; // 上限：基礎 max_hp 的 2 倍
+    $eff_base_hp = (int)$_eff['hp']['value'];
+    $max_hp_cap = $eff_base_hp * 2;
     $run['buffs']['dmg']    += ceil($user['dmg']    * 0.2);
     $run['buffs']['def']    += ceil($user['def']    * 0.2);
-    $new_hp_buff = $run['buffs']['max_hp'] + ceil($user['max_hp'] * 0.2);
-    $run['buffs']['max_hp'] = min($max_hp_cap - $user['max_hp'], $new_hp_buff);
-    $run['hp'] = $user['max_hp'] + $run['buffs']['max_hp'];
+    $new_hp_buff = $run['buffs']['max_hp'] + ceil($eff_base_hp * 0.2);
+    $run['buffs']['max_hp'] = min($max_hp_cap - $eff_base_hp, $new_hp_buff);
+    $run['hp'] = $eff_base_hp + $run['buffs']['max_hp'];
     $add_line("<p style='color:#ffd700; font-weight:bold; font-size: 16px;'>✨ 奇蹟降臨！神明的祝福籠罩著你！<br>生命值完全恢復，且全屬性提升 20%！</p>", 1500);
 }
 ?>
