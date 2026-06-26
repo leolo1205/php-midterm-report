@@ -1,9 +1,0 @@
-# 資料庫備份（含敏感資料，不上傳）
-*.sql
-
-# 系統檔
-.DS_Store
-Thumbs.db
-
-# PHP 設定檔（如有含密碼）
-config.local.php
